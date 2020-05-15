@@ -12,6 +12,7 @@
 
 .project
 .settings
+__debug_bin
 
 # Environments
 .env
