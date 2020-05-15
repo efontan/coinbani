@@ -1,9 +1,11 @@
 package main
 
 import (
-	"coinbani/cmd/options"
 	"fmt"
 	"log"
+
+	"coinbani/cmd/options"
+	"coinbani/pkg/reply"
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.uber.org/zap"
@@ -15,7 +17,7 @@ func main() {
 	logger.Info("initializing coinbani bot")
 
 	cfg := options.NewConfig()
-	bot, err := tb.NewBotAPI(cfg.BotToken)
+	bot, err := tb.NewBotAPI(cfg.Bot.Token)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -31,6 +33,8 @@ func main() {
 		log.Panic(err)
 	}
 
+	h := reply.NewHandler(bot, logger)
+
 	for {
 		select {
 		case update, ok := <-updates:
@@ -39,25 +43,7 @@ func main() {
 				break
 			}
 
-			if update.Message == nil { // ignore any non-Message Updates
-				continue
-			}
-
-			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-
-			msg := tb.NewMessage(update.Message.Chat.ID, "")
-			switch update.Message.Command() {
-			case "help":
-				msg.Text = "type /sayhi or /status."
-			case "sayhi":
-				msg.Text = "Hi :)"
-			case "status":
-				msg.Text = "I'm ok."
-			default:
-				msg.Text = "Try with /help"
-			}
-
-			bot.Send(msg)
+			go h.HandleReply(update)
 		}
 	}
 
