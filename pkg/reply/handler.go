@@ -54,7 +54,7 @@ func (h *handler) HandleReply(update tb.Update) {
 
 // TODO: implement
 func (h *handler) handlePricesCommand() string {
-	lastPrices, err := h.crypto.GetLastPrices()
+	lastPrices, err := h.cryptoService.GetLastPrices()
 	if err != nil {
 		h.logger.Error("getting cryto prices")
 	}
@@ -90,5 +90,5 @@ func (h *handler) formatPricesMessage(lastPrices []*crypto.CryptocurrencyList) (
     Blue           $134       $128
 
 *Última Actualización: 16/05/2020 17:45hs*
-`
+`,nil
 }
