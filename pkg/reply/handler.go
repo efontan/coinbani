@@ -59,7 +59,7 @@ func (h *handler) handlePricesCommand() string {
 		h.logger.Error("getting cryto prices")
 	}
 
-	message, err := h.formatPricesMessage(prices)
+	message, err := h.formatPricesMessage(lastPrices)
 	if err != nil {
 		h.logger.Error("formatting prices message")
 	}
@@ -67,18 +67,21 @@ func (h *handler) handlePricesCommand() string {
 	return message
 }
 
-func (h *handler) formatPricesMessage() (string, error) {
+func (h *handler) formatPricesMessage(lastPrices []*crypto.CryptocurrencyList) (string, error) {
 	return `
 #### Buenbit 2.0 ####
 	Operación     Compra     Venta
 	-------------------------------
+	DAI/ARS        134.5    138
+    DAI/USD        1.03     1.07
+
 #### Satoshi Tango ####
 	Operación     Compra     Venta
     -------------------------------
-    DAI/ARS           118.5     128
-    DAI/USD           134       128
-    BTC/ARS           134       128
-    BTC/USD           134       128
+    DAI/ARS        134.5    138
+    DAI/USD        1.03     1.07
+    BTC/ARS        134.5    138
+    BTC/USD        134.5    138
 
 #### Dolar ####
 	Tipo           Compra     Venta
@@ -89,64 +92,3 @@ func (h *handler) formatPricesMessage() (string, error) {
 *Última Actualización: 16/05/2020 17:45hs*
 `
 }
-
-var templateMarkdown string = `
-{{range $price := .}}
-#### {{$exchange}} ####
-{{range $element}}
-{{.Crypto.Description}}
-{{end}}
-
-{{end}}
-
-
-
-#### Buenbit 2.0 ####
-	Operación     Compra     Venta
-	-------------------------------
-	{{range $exchange, $price := .}}
-	{{$exchange}}  
-{{range $element}}{{.Value}}
-{{end}}
-{{end}}
-#### Satoshi Tango ####
-	Operación     Compra     Venta
-    -------------------------------
-    DAI/ARS           118.5     128
-    DAI/USD           134       128
-    BTC/ARS           134       128
-    BTC/USD           134       128
-
-#### Dolar ####
-	Tipo           Compra     Venta
-    -------------------------------
-    Solidario      $69.7      $65.2
-    Blue           $134       $128
-
-*Última Actualización: 16/05/2020 17:45hs*
-`
-
-// func processTemplate() string {
-// 	t := template.New("action")
-
-// 	var err error
-// 	t, err = t.ParseFiles("path/to/action.html")
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	key := "some strings"
-
-// 	data := struct{
-// 		Key string
-// 	}{
-// 		Key: key
-// 	}
-
-// 	var tpl bytes.Buffer
-// 	if err := t.Execute(&tpl, data); err != nil {
-// 		return err
-// 	}
-
-// 	result := tpl.String()
-// }
