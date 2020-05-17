@@ -2,7 +2,7 @@ package crypto
 
 type CryptocurrencyList struct {
 	Exchange string
-	Prices   []CryptocurrencyPrice
+	Prices   []*CryptocurrencyPrice
 }
 
 type CryptocurrencyPrice struct {

@@ -2,6 +2,7 @@ package reply
 
 import (
 	"fmt"
+	"time"
 
 	"coinbani/pkg/crypto"
 
@@ -9,20 +10,25 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	errorMsg   = "Lo sentimos, ha ocurrido un error intenta más tarde"
+)
+
 type cryptoService interface {
 	GetLastPrices() ([]*crypto.CryptocurrencyList, error)
 }
 
 type handler struct {
-	bot           *tb.BotAPI
+	tgAPI         *tb.BotAPI
 	cryptoService cryptoService
 	logger        *zap.Logger
 }
 
-func NewHandler(b *tb.BotAPI, l *zap.Logger) *handler {
+func NewHandler(b *tb.BotAPI, cs cryptoService, l *zap.Logger) *handler {
 	return &handler{
-		bot:    b,
-		logger: l,
+		tgAPI:         b,
+		cryptoService: cs,
+		logger:        l,
 	}
 }
 
@@ -31,25 +37,25 @@ func (h *handler) HandleReply(update tb.Update) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("[%s] %s", update.Message.From.UserName, update.Message.Text))
+	h.logger.Info(fmt.Sprintf("handling message [%s] %s", update.Message.From.UserName, update.Message.Text))
 
 	msg := tb.NewMessage(update.Message.Chat.ID, "")
 
 	switch update.Message.Command() {
 	case "help":
-		msg.Text = "comandos disponibles: /sayhi - /status - /precios"
+		msg.Text = "Comandos disponibles:\n /sayhi - /status - /cotizaciones"
 	case "sayhi":
 		msg.Text = "Hi :)"
 	case "status":
 		msg.Text = "I'm ok."
-	case "precios":
-		msg.ParseMode = tb.ModeMarkdown
+	case "cotizaciones":
+		msg.ParseMode = "markdown"
 		msg.Text = h.handlePricesCommand()
 	default:
-		msg.Text = "Try with /help"
+		msg.Text = "Intenta con /help"
 	}
 
-	h.bot.Send(msg)
+	h.tgAPI.Send(msg)
 }
 
 // TODO: implement
@@ -57,11 +63,13 @@ func (h *handler) handlePricesCommand() string {
 	lastPrices, err := h.cryptoService.GetLastPrices()
 	if err != nil {
 		h.logger.Error("getting cryto prices")
+		return errorMsg
 	}
 
 	message, err := h.formatPricesMessage(lastPrices)
 	if err != nil {
 		h.logger.Error("formatting prices message")
+		return errorMsg
 	}
 
 	return message
@@ -90,5 +98,5 @@ func (h *handler) formatPricesMessage(lastPrices []*crypto.CryptocurrencyList) (
     Blue           $134       $128
 
 *Última Actualización: 16/05/2020 17:45hs*
-`,nil
+`, nil
 }

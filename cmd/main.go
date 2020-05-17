@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"coinbani/cmd/options"
+	"coinbani/pkg/crypto"
 	"coinbani/pkg/reply"
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -22,19 +23,22 @@ func main() {
 		log.Panic(err)
 	}
 
-	bot.Debug = true
-	logger.Info(fmt.Sprintf("Authorized on account %s", bot.Self.UserName))
+	bot.Debug = cfg.Bot.Debug
+	logger.Info(fmt.Sprintf("authorized on account %s", bot.Self.UserName))
 
 	u := tb.NewUpdate(0)
 	u.Timeout = 60
 
+	logger.Info("starting channel for getting bot updates")
 	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	h := reply.NewHandler(bot, logger)
+	cryptoService := crypto.NewService(logger)
+	replyHandler := reply.NewHandler(bot, cryptoService, logger)
 
+	logger.Info("coinbani bot succesfully started!")
 	for {
 		select {
 		case update, ok := <-updates:
@@ -43,7 +47,7 @@ func main() {
 				break
 			}
 
-			go h.HandleReply(update)
+			go replyHandler.HandleReply(update)
 		}
 	}
 

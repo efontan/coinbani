@@ -20,3 +20,7 @@ func (s *service) GetLastPrices() ([]*CryptocurrencyList, error) {
 
 	return lastPrices, nil
 }
+
+func (s *service) FetchBuenBitLastPrices() ([]*CryptocurrencyPrice, error) {
+	return nil, nil
+}
