@@ -2,12 +2,19 @@ package exchange
 
 import (
 	"coinbani/cmd/options"
+	"coinbani/pkg/cache"
 	"coinbani/pkg/crypto"
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
+)
+
+const (
+	Expiration         = 30 * time.Minute
+	BBResponseCacheKey = "bb_response"
 )
 
 type BBResponse struct {
@@ -32,11 +39,12 @@ type BBPrice struct {
 
 type bbExchange struct {
 	httpClient *http.Client
-	config *options.ExchangeConfig
+	config     *options.ExchangeConfig
+	cache      cache.Cache
 }
 
-func NewBBExchange(c *options.ExchangeConfig, httpClient *http.Client) *bbExchange {
-	return &bbExchange{config: c, httpClient: httpClient}
+func NewBBExchange(c *options.ExchangeConfig, httpClient *http.Client, cache cache.Cache) *bbExchange {
+	return &bbExchange{config: c, httpClient: httpClient, cache: cache}
 }
 
 func (e *bbExchange) FetchLastPrices() ([]*crypto.CryptocurrencyPrice, error) {
@@ -48,9 +56,18 @@ func (e *bbExchange) FetchLastPrices() ([]*crypto.CryptocurrencyPrice, error) {
 	defer r.Body.Close()
 
 	var bbResponse BBResponse
-	err = json.NewDecoder(r.Body).Decode(&bbResponse)
-	if err != nil || bbResponse.Object == nil {
-		return nil, errors.Wrap(err, "decoding BB response json")
+
+	cachedResponse, found := e.cache.Get(BBResponseCacheKey)
+	if !found {
+		// fetch from service
+		err = json.NewDecoder(r.Body).Decode(&bbResponse)
+		if err != nil || bbResponse.Object == nil {
+			return nil, errors.Wrap(err, "decoding BB response json")
+		}
+		e.cache.Set(BBResponseCacheKey, bbResponse, Expiration)
+	} else {
+		// fetch from cache
+		bbResponse = cachedResponse.(BBResponse)
 	}
 
 	// DAI ARS

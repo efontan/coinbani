@@ -77,15 +77,15 @@ func (h *handler) handlePricesCommand() string {
 func (h *handler) formatPricesMessage(lastPrices []*crypto.CryptocurrencyList) (string, error) {
 	message := ""
 
-	for _, p := range lastPrices  {
-		message = message + fmt.Sprint("-------------------------------\n")
+	for _, p := range lastPrices {
+		message = message + fmt.Sprint("-------------------------------------\n")
 		message = message + fmt.Sprintf("%s\n", p.Exchange)
-		message = message + fmt.Sprint("-------------------------------\n")
+		message = message + fmt.Sprint("-------------------------------------\n")
 
 		for _, price := range p.Prices {
 			message = message + fmt.Sprintf("%s\n", price.Desc)
 			message = message + fmt.Sprintf("  Compra: %.2f\n", price.BidPrice)
-			message = message + fmt.Sprintf("  Venta: %.2f\n", price.AskPrice)
+			message = message + fmt.Sprintf("  Venta: %.2f\n\n", price.AskPrice)
 		}
 	}
 

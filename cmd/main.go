@@ -1,6 +1,7 @@
 package main
 
 import (
+	"coinbani/pkg/cache"
 	"fmt"
 	"log"
 	"net/http"
@@ -38,8 +39,9 @@ func main() {
 		log.Panic(err)
 	}
 
+	exchangeCache := cache.New()
 	httpClient := &http.Client{Timeout: 10 * time.Second}
-	bbExchange := exchange.NewBBExchange(cfg.Exchange, httpClient)
+	bbExchange := exchange.NewBBExchange(cfg.Exchange, httpClient, exchangeCache)
 
 	cryptoService := crypto.NewService(bbExchange, logger)
 	replyHandler := reply.NewHandler(bot, cryptoService, logger)
