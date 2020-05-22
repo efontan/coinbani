@@ -7,7 +7,8 @@ import (
 )
 
 type config struct {
-	Bot *BotConfig
+	Bot      *BotConfig
+	Exchange *ExchangeConfig
 }
 
 func NewConfig() *config {
@@ -21,10 +22,19 @@ func NewConfig() *config {
 			Token: os.Getenv("BOT_TOKEN"),
 			Debug: debug,
 		},
+		Exchange: &ExchangeConfig{
+			BBURL: os.Getenv("BB_URL"),
+			SatoshiURL: os.Getenv("SATOSHI_URL"),
+		},
 	}
 }
 
 type BotConfig struct {
 	Token string
 	Debug bool
+}
+
+type ExchangeConfig struct {
+	BBURL string
+	SatoshiURL string
 }

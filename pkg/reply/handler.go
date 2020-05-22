@@ -2,7 +2,6 @@ package reply
 
 import (
 	"fmt"
-	"time"
 
 	"coinbani/pkg/crypto"
 
@@ -11,7 +10,7 @@ import (
 )
 
 const (
-	errorMsg   = "Lo sentimos, ha ocurrido un error intenta más tarde"
+	errorMsg = "Lo sentimos, ha ocurrido un error intenta más tarde"
 )
 
 type cryptoService interface {
@@ -62,13 +61,13 @@ func (h *handler) HandleReply(update tb.Update) {
 func (h *handler) handlePricesCommand() string {
 	lastPrices, err := h.cryptoService.GetLastPrices()
 	if err != nil {
-		h.logger.Error("getting cryto prices")
+		h.logger.Error("getting cryto prices", zap.Error(err))
 		return errorMsg
 	}
 
 	message, err := h.formatPricesMessage(lastPrices)
 	if err != nil {
-		h.logger.Error("formatting prices message")
+		h.logger.Error("formatting prices message", zap.Error(err))
 		return errorMsg
 	}
 
@@ -76,27 +75,19 @@ func (h *handler) handlePricesCommand() string {
 }
 
 func (h *handler) formatPricesMessage(lastPrices []*crypto.CryptocurrencyList) (string, error) {
-	return `
-#### Buenbit 2.0 ####
-	Operación     Compra     Venta
-	-------------------------------
-	DAI/ARS        134.5    138
-    DAI/USD        1.03     1.07
+	message := ""
 
-#### Satoshi Tango ####
-	Operación     Compra     Venta
-    -------------------------------
-    DAI/ARS        134.5    138
-    DAI/USD        1.03     1.07
-    BTC/ARS        134.5    138
-    BTC/USD        134.5    138
+	for _, p := range lastPrices  {
+		message = message + fmt.Sprint("-------------------------------\n")
+		message = message + fmt.Sprintf("%s\n", p.Exchange)
+		message = message + fmt.Sprint("-------------------------------\n")
 
-#### Dolar ####
-	Tipo           Compra     Venta
-    -------------------------------
-    Solidario      $69.7      $65.2
-    Blue           $134       $128
+		for _, price := range p.Prices {
+			message = message + fmt.Sprintf("%s\n", price.Desc)
+			message = message + fmt.Sprintf("  Compra: %.2f\n", price.BidPrice)
+			message = message + fmt.Sprintf("  Venta: %.2f\n", price.AskPrice)
+		}
+	}
 
-*Última Actualización: 16/05/2020 17:45hs*
-`, nil
+	return message, nil
 }

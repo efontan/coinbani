@@ -3,9 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	"time"
 
 	"coinbani/cmd/options"
 	"coinbani/pkg/crypto"
+	"coinbani/pkg/crypto/exchange"
 	"coinbani/pkg/reply"
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -35,10 +38,13 @@ func main() {
 		log.Panic(err)
 	}
 
-	cryptoService := crypto.NewService(logger)
+	httpClient := &http.Client{Timeout: 10 * time.Second}
+	bbExchange := exchange.NewBBExchange(cfg.Exchange, httpClient)
+
+	cryptoService := crypto.NewService(bbExchange, logger)
 	replyHandler := reply.NewHandler(bot, cryptoService, logger)
 
-	logger.Info("coinbani bot succesfully started!")
+	logger.Info("coinbani bot successfully started!")
 	for {
 		select {
 		case update, ok := <-updates:

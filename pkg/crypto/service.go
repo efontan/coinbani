@@ -1,26 +1,35 @@
 package crypto
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+)
+
+
+type exchange interface {
+	FetchLastPrices() ([]*CryptocurrencyPrice, error)
+}
 
 type service struct {
-	logger *zap.Logger
+	bbExchange exchange
+	logger     *zap.Logger
 }
 
-func NewService(l *zap.Logger) *service {
-	return &service{logger: l}
+func NewService(bb exchange, l *zap.Logger) *service {
+	return &service{bbExchange: bb, logger: l}
 }
 
-// TODO: implement
 func (s *service) GetLastPrices() ([]*CryptocurrencyList, error) {
 	var lastPrices []*CryptocurrencyList
 
-	// Fetch BuenBit prices
+	// Fetch BB prices
+	bbLastPrices, err := s.bbExchange.FetchLastPrices()
+	if err != nil {
+		return nil, err
+	}
+	lastPrices = append(lastPrices, &CryptocurrencyList{Exchange: "Buenbit 2.0", Prices: bbLastPrices})
 
 	// Fetch Satoshi Tango prices
+	// TODO: implement
 
 	return lastPrices, nil
-}
-
-func (s *service) FetchBuenBitLastPrices() ([]*CryptocurrencyPrice, error) {
-	return nil, nil
 }
