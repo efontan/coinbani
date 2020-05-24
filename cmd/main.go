@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"coinbani/cmd/options"
-	"coinbani/pkg/crypto"
-	"coinbani/pkg/crypto/exchange"
+	"coinbani/pkg/currency"
+	"coinbani/pkg/currency/provider"
 	"coinbani/pkg/reply"
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -39,12 +39,13 @@ func main() {
 		log.Panic(err)
 	}
 
-	exchangeCache := cache.New()
+	providerCache := cache.New()
 	httpClient := &http.Client{Timeout: 10 * time.Second}
-	bbExchange := exchange.NewBBExchange(cfg.Exchange, httpClient, exchangeCache)
+	bbProvider := provider.NewBBProvider(cfg.Providers, httpClient, providerCache)
+	satoshiTProvider := provider.NewSatoshiTProvider(cfg.Providers, httpClient, providerCache)
 
-	cryptoService := crypto.NewService(bbExchange, logger)
-	replyHandler := reply.NewHandler(bot, cryptoService, logger)
+	currencyService := currency.NewService(bbProvider, satoshiTProvider, logger)
+	replyHandler := reply.NewHandler(bot, currencyService, logger)
 
 	logger.Info("coinbani bot successfully started!")
 	for {
@@ -58,5 +59,4 @@ func main() {
 			go replyHandler.HandleReply(update)
 		}
 	}
-
 }

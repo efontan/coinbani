@@ -3,7 +3,7 @@ package reply
 import (
 	"fmt"
 
-	"coinbani/pkg/crypto"
+	"coinbani/pkg/currency"
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.uber.org/zap"
@@ -13,8 +13,18 @@ const (
 	errorMsg = "Lo sentimos, ha ocurrido un error intenta más tarde"
 )
 
+var testKeyboard = tb.NewReplyKeyboard(
+	tb.NewKeyboardButtonRow(
+		tb.NewKeyboardButton("BuenBit"),
+		tb.NewKeyboardButton("Satoshi Tango"),
+	),
+	tb.NewKeyboardButtonRow(
+		tb.NewKeyboardButton("Dolar"),
+	),
+)
+
 type cryptoService interface {
-	GetLastPrices() ([]*crypto.CryptocurrencyList, error)
+	GetLastPrices() ([]*currency.CurrencyPriceList, error)
 }
 
 type handler struct {
@@ -42,13 +52,12 @@ func (h *handler) HandleReply(update tb.Update) {
 
 	switch update.Message.Command() {
 	case "help":
-		msg.Text = "Comandos disponibles:\n /sayhi - /status - /cotizaciones"
-	case "sayhi":
-		msg.Text = "Hi :)"
-	case "status":
-		msg.Text = "I'm ok."
+		msg.Text = "Comandos disponibles:\n /cotizaciones"
+	case "test":
+		msg.Text = "Selecciona una opción:"
+		msg.ReplyMarkup = testKeyboard
 	case "cotizaciones":
-		msg.ParseMode = "markdown"
+		msg.ParseMode = tb.ModeHTML
 		msg.Text = h.handlePricesCommand()
 	default:
 		msg.Text = "Intenta con /help"
@@ -74,12 +83,12 @@ func (h *handler) handlePricesCommand() string {
 	return message
 }
 
-func (h *handler) formatPricesMessage(lastPrices []*crypto.CryptocurrencyList) (string, error) {
+func (h *handler) formatPricesMessage(lastPrices []*currency.CurrencyPriceList) (string, error) {
 	message := ""
 
 	for _, p := range lastPrices {
 		message = message + fmt.Sprint("-------------------------------------\n")
-		message = message + fmt.Sprintf("%s\n", p.Exchange)
+		message = message + fmt.Sprintf("<strong>%s\n</strong>", p.ProviderName)
 		message = message + fmt.Sprint("-------------------------------------\n")
 
 		for _, price := range p.Prices {
