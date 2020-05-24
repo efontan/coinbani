@@ -43,8 +43,9 @@ func main() {
 	httpClient := &http.Client{Timeout: 10 * time.Second}
 	bbProvider := provider.NewBBProvider(cfg.Providers, httpClient, providerCache)
 	satoshiTProvider := provider.NewSatoshiTProvider(cfg.Providers, httpClient, providerCache)
+	dolarProvider := provider.NewDolarProvider(cfg.Providers, httpClient, providerCache)
 
-	currencyService := currency.NewService(bbProvider, satoshiTProvider, logger)
+	currencyService := currency.NewService(bbProvider, satoshiTProvider, dolarProvider, logger)
 	replyHandler := reply.NewHandler(bot, currencyService, logger)
 
 	logger.Info("coinbani bot successfully started!")

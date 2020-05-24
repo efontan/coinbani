@@ -10,13 +10,14 @@ type provider interface {
 }
 
 type service struct {
-	bbProvider provider
-	stProvider provider
-	logger     *zap.Logger
+	bbProvider    provider
+	stProvider    provider
+	dolarProvider provider
+	logger        *zap.Logger
 }
 
-func NewService(bb provider, st provider, l *zap.Logger) *service {
-	return &service{bbProvider: bb, stProvider: st, logger: l}
+func NewService(bb provider, st provider, dolar provider, l *zap.Logger) *service {
+	return &service{bbProvider: bb, stProvider: st, dolarProvider: dolar, logger: l}
 }
 
 func (s *service) GetLastPrices() ([]*CurrencyPriceList, error) {
@@ -35,6 +36,13 @@ func (s *service) GetLastPrices() ([]*CurrencyPriceList, error) {
 		return nil, errors.Wrap(err, "fetching SatoshiT prices")
 	}
 	lastPrices = append(lastPrices, &CurrencyPriceList{ProviderName: "Satoshi Tango", Prices: stLastPrices})
+
+	// Fetch Dolar prices
+	dolarLastPrices, err := s.dolarProvider.FetchLastPrices()
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching Dolar prices")
+	}
+	lastPrices = append(lastPrices, &CurrencyPriceList{ProviderName: "Dolar", Prices: dolarLastPrices})
 
 	return lastPrices, nil
 }

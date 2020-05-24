@@ -26,6 +26,7 @@ func NewConfig() *config {
 			BBURL:         os.Getenv("BB_URL"),
 			SatoshiARSURL: os.Getenv("SATOSHI_ARS_URL"),
 			SatoshiUSDURL: os.Getenv("SATOSHI_USD_URL"),
+			DolarURL:      os.Getenv("DOLAR_URL"),
 		},
 	}
 }
@@ -39,4 +40,5 @@ type ProvidersConfig struct {
 	BBURL         string
 	SatoshiARSURL string
 	SatoshiUSDURL string
+	DolarURL      string
 }
