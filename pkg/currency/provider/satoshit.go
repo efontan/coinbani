@@ -1,14 +1,15 @@
 package provider
 
 import (
-	"coinbani/cmd/options"
-	"coinbani/pkg/cache"
-	"coinbani/pkg/client"
-	"coinbani/pkg/currency"
 	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
+
+	"coinbani/cmd/options"
+	"coinbani/pkg/cache"
+	"coinbani/pkg/client"
+	"coinbani/pkg/currency"
 
 	"github.com/pkg/errors"
 )
@@ -105,10 +106,11 @@ func addCryptocurrencySTPrice(lastPrices []*currency.CurrencyPrice, price *Satos
 	desc := strings.ToUpper(bidCurrency) + "/" + strings.ToUpper(askCurrency)
 
 	lastPrices = append(lastPrices, &currency.CurrencyPrice{
-		Desc:     desc,
-		Currency: askCurrency,
-		BidPrice: price.BidPrice,
-		AskPrice: price.AskPrice,
+		Desc:          desc,
+		Currency:      askCurrency,
+		BidPrice:      price.BidPrice,
+		AskPrice:      price.AskPrice,
+		PercentChange: "-",
 	})
 
 	return lastPrices

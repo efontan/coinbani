@@ -13,31 +13,31 @@ const (
 	errorMsg = "Lo sentimos, ha ocurrido un error intenta más tarde"
 )
 
-var testKeyboard = tb.NewReplyKeyboard(
+var optionsKeyboard = tb.NewReplyKeyboard(
 	tb.NewKeyboardButtonRow(
-		tb.NewKeyboardButton("BuenBit"),
-		tb.NewKeyboardButton("Satoshi Tango"),
+		tb.NewKeyboardButton(currency.BBProviderLabel),
+		tb.NewKeyboardButton(currency.SatoshiTProviderLabel),
 	),
 	tb.NewKeyboardButtonRow(
-		tb.NewKeyboardButton("Dolar"),
+		tb.NewKeyboardButton(currency.DolarProviderLabel),
 	),
 )
 
-type cryptoService interface {
-	GetLastPrices() ([]*currency.CurrencyPriceList, error)
+type currencyService interface {
+	GetLastPrices(providerName string) ([]*currency.CurrencyPriceList, error)
 }
 
 type handler struct {
-	tgAPI         *tb.BotAPI
-	cryptoService cryptoService
-	logger        *zap.Logger
+	tgAPI           *tb.BotAPI
+	currencyService currencyService
+	logger          *zap.Logger
 }
 
-func NewHandler(b *tb.BotAPI, cs cryptoService, l *zap.Logger) *handler {
+func NewHandler(b *tb.BotAPI, cs currencyService, l *zap.Logger) *handler {
 	return &handler{
-		tgAPI:         b,
-		cryptoService: cs,
-		logger:        l,
+		tgAPI:           b,
+		currencyService: cs,
+		logger:          l,
 	}
 }
 
@@ -51,26 +51,32 @@ func (h *handler) HandleReply(update tb.Update) {
 	msg := tb.NewMessage(update.Message.Chat.ID, "")
 
 	switch update.Message.Command() {
-	case "help":
-		msg.Text = "Comandos disponibles:\n /cotizaciones"
-	case "test":
-		msg.Text = "Selecciona una opción:"
-		msg.ReplyMarkup = testKeyboard
 	case "cotizaciones":
-		msg.ParseMode = tb.ModeHTML
-		msg.Text = h.handlePricesCommand()
+		msg.Text = "Selecciona una opción para ver las cotizaciones:"
+		msg.ReplyMarkup = optionsKeyboard
 	default:
-		msg.Text = "Intenta con /help"
+		switch update.Message.Text {
+		case currency.BBProviderLabel:
+			msg.ParseMode = tb.ModeHTML
+			msg.Text = h.handleProviderCommand(currency.BBProviderLabel)
+		case currency.SatoshiTProviderLabel:
+			msg.ParseMode = tb.ModeHTML
+			msg.Text = h.handleProviderCommand(currency.SatoshiTProviderLabel)
+		case currency.DolarProviderLabel:
+			msg.ParseMode = tb.ModeHTML
+			msg.Text = h.handleProviderCommand(currency.DolarProviderLabel)
+		default:
+			msg.Text = "Intenta con /cotizaciones"
+		}
 	}
 
 	h.tgAPI.Send(msg)
 }
 
-// TODO: implement
-func (h *handler) handlePricesCommand() string {
-	lastPrices, err := h.cryptoService.GetLastPrices()
+func (h *handler) handleProviderCommand(providerName string) string {
+	lastPrices, err := h.currencyService.GetLastPrices(providerName)
 	if err != nil {
-		h.logger.Error("getting cryto prices", zap.Error(err))
+		h.logger.Error("getting prices", zap.Error(err))
 		return errorMsg
 	}
 
@@ -95,6 +101,9 @@ func (h *handler) formatPricesMessage(lastPrices []*currency.CurrencyPriceList) 
 			message = message + fmt.Sprintf("%s\n", price.Desc)
 			message = message + fmt.Sprintf("  Compra: %.2f\n", price.BidPrice)
 			message = message + fmt.Sprintf("  Venta: %.2f\n\n", price.AskPrice)
+			if price.PercentChange != "" {
+				message = message + fmt.Sprintf("  Variación: %s\n\n", price.PercentChange)
+			}
 		}
 	}
 

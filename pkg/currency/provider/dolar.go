@@ -1,15 +1,16 @@
 package provider
 
 import (
-	"coinbani/cmd/options"
-	"coinbani/pkg/cache"
-	"coinbani/pkg/client"
-	"coinbani/pkg/currency"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"coinbani/cmd/options"
+	"coinbani/pkg/cache"
+	"coinbani/pkg/client"
+	"coinbani/pkg/currency"
 
 	"github.com/pkg/errors"
 )
@@ -24,18 +25,11 @@ type DolarRateResponse []struct {
 }
 
 type DolarPrice struct {
-	BidPrice string `json:"compra"`
-	AskPrice string `json:"venta"`
-	Name     string `json:"nombre"`
-	Change   string `json:"variacion"`
+	BidPrice      string `json:"compra"`
+	AskPrice      string `json:"venta"`
+	Name          string `json:"nombre"`
+	PercentChange string `json:"variacion"`
 }
-
-//type DolarRateResponse struct {
-//	BidPrice string `json:"compra"`
-//	AskPrice string `json:"venta"`
-//	Name     string `json:"nombre"`
-//	Change   string `json:"variacion"`
-//}
 
 type dolarProvider struct {
 	config     *options.ProvidersConfig
@@ -95,10 +89,11 @@ func addDolarPrices(lastPrices []*currency.CurrencyPrice, price DolarPrice) []*c
 	}
 
 	lastPrices = append(lastPrices, &currency.CurrencyPrice{
-		Desc:     price.Name,
-		Currency: "USD",
-		BidPrice: bidPrice,
-		AskPrice: askPrice,
+		Desc:          price.Name,
+		Currency:      "USD",
+		BidPrice:      bidPrice,
+		AskPrice:      askPrice,
+		PercentChange: formatPercent(price.PercentChange),
 	})
 
 	return lastPrices
@@ -106,4 +101,11 @@ func addDolarPrices(lastPrices []*currency.CurrencyPrice, price DolarPrice) []*c
 
 func replaceComa(value string) string {
 	return strings.Replace(value, ",", ".", -1)
+}
+
+func formatPercent(percentChange string) string {
+	if !strings.Contains(percentChange, "-") {
+		return "+" + percentChange
+	}
+	return percentChange
 }

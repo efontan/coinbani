@@ -1,14 +1,15 @@
 package provider
 
 import (
-	"coinbani/cmd/options"
-	"coinbani/pkg/cache"
-	"coinbani/pkg/client"
-	"coinbani/pkg/currency"
 	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
+
+	"coinbani/cmd/options"
+	"coinbani/pkg/cache"
+	"coinbani/pkg/client"
+	"coinbani/pkg/currency"
 
 	"github.com/pkg/errors"
 )
@@ -90,10 +91,11 @@ func addCryptocurrencyBBPrice(lastPrices []*currency.CurrencyPrice, price *BBPri
 	desc := strings.ToUpper(price.BidCurrency) + "/" + strings.ToUpper(price.AskCurrency)
 
 	lastPrices = append(lastPrices, &currency.CurrencyPrice{
-		Desc:     desc,
-		Currency: strings.Replace(price.Currency, "$", "S", -1),
-		BidPrice: price.BidPrice,
-		AskPrice: price.AskPrice,
+		Desc:          desc,
+		Currency:      strings.Replace(price.Currency, "$", "S", -1),
+		BidPrice:      price.BidPrice,
+		AskPrice:      price.AskPrice,
+		PercentChange: price.PriceChangePercent,
 	})
 
 	return lastPrices
