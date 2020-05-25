@@ -9,7 +9,6 @@ import (
 type config struct {
 	Bot       *BotConfig
 	Providers *ProvidersConfig
-	Template  *TemplateConfig
 }
 
 func NewConfig() *config {
@@ -29,9 +28,6 @@ func NewConfig() *config {
 			SatoshiUSDURL: os.Getenv("SATOSHI_USD_URL"),
 			DollarURL:     os.Getenv("DOLLAR_URL"),
 		},
-		Template: &TemplateConfig{
-			TemplatesDir: os.Getenv("TEMPLATES_DIR"),
-		},
 	}
 }
 
@@ -45,8 +41,4 @@ type ProvidersConfig struct {
 	SatoshiARSURL string
 	SatoshiUSDURL string
 	DollarURL     string
-}
-
-type TemplateConfig struct {
-	TemplatesDir string
 }

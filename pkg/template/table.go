@@ -8,7 +8,7 @@ import (
 	"github.com/alexeyco/simpletable"
 )
 
-type priceTemplate struct {
+type priceData struct {
 	ProviderName string
 	PricesTable  string
 }
@@ -26,7 +26,7 @@ func NewTableFormatter() *simpleTableFormatter {
 
 func (t *simpleTableFormatter) FormatPricesTable(prices []*currency.CurrencyPrice) (content string, err error) {
 	defer func() {
-		if r := recover(); err != nil {
+		if r := recover(); r != nil {
 			var ok bool
 			err, ok = r.(error)
 			if !ok {
@@ -41,7 +41,7 @@ func (t *simpleTableFormatter) FormatPricesTable(prices []*currency.CurrencyPric
 
 	table.Header = &simpletable.Header{
 		Cells: []*simpletable.Cell{
-			{Align: simpletable.AlignLeft, Text: "#"},
+			{Align: simpletable.AlignLeft, Text: "Moneda"},
 			{Align: simpletable.AlignLeft, Text: "Compra"},
 			{Align: simpletable.AlignLeft, Text: "Venta"},
 		},

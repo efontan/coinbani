@@ -4,40 +4,44 @@ import (
 	"bytes"
 	"text/template"
 
-	"coinbani/cmd/options"
 	"coinbani/pkg/currency"
 
 	"github.com/pkg/errors"
 )
 
 const (
-	pricesSummaryTemplateFileName = "prices.gohtml"
+	PricesTemplate = `
+<strong>{{.ProviderName}}</strong>
+
+<pre>
+{{.PricesTable}}
+</pre>
+`
 )
 
 type templateEngine struct {
-	config         *options.TemplateConfig
 	tableFormatter tableFormatter
 }
 
-func NewEngine(c *options.TemplateConfig) *templateEngine {
-	return &templateEngine{config: c, tableFormatter: NewTableFormatter()}
+func NewEngine() *templateEngine {
+	return &templateEngine{tableFormatter: NewTableFormatter()}
 }
 
-func (e *templateEngine) ProcessPricesTemplate(priceList *currency.CurrencyPriceList) (string, error) {
+func (e *templateEngine) FormatPricesMessage(priceList *currency.CurrencyPriceList) (string, error) {
 	pricesTable, err := e.tableFormatter.FormatPricesTable(priceList.Prices)
 	if err != nil {
-		return "", errors.Wrap(err, "formating prices table")
+		return "", errors.Wrap(err, "formatting prices table")
 	}
 
-	t := &priceTemplate{
+	data := &priceData{
 		ProviderName: priceList.ProviderName,
 		PricesTable:  pricesTable,
 	}
-	return e.processTemplate(e.config.TemplatesDir+pricesSummaryTemplateFileName, t)
+	return e.processTemplate(PricesTemplate, data)
 }
 
-func (e *templateEngine) processTemplate(fileName string, data interface{}) (string, error) {
-	tmpl, err := template.ParseFiles(fileName)
+func (e *templateEngine) processTemplate(t string, data interface{}) (string, error) {
+	tmpl, err := template.New("tmpl").Parse(t)
 	if err != nil {
 		return "", errors.Wrap(err, "parsing template file")
 	}

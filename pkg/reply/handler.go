@@ -28,7 +28,7 @@ type currencyService interface {
 }
 
 type templateEngine interface {
-	ProcessPricesTemplate(priceList *currency.CurrencyPriceList) (string, error)
+	FormatPricesMessage(priceList *currency.CurrencyPriceList) (string, error)
 }
 
 type handler struct {
@@ -56,24 +56,18 @@ func (h *handler) HandleReply(update tb.Update) {
 
 	msg := tb.NewMessage(update.Message.Chat.ID, "")
 
-	switch update.Message.Command() {
-	case "cotizaciones":
-		msg.Text = "Selecciona una opción para ver las cotizaciones:"
-		msg.ReplyMarkup = optionsKeyboard
-	default:
-		switch update.Message.Text {
-		case currency.BBProviderLabel:
-			msg.ParseMode = tb.ModeHTML
-			msg.Text = h.handleProviderCommand(currency.BBProviderLabel)
-		case currency.SatoshiTProviderLabel:
-			msg.ParseMode = tb.ModeHTML
-			msg.Text = h.handleProviderCommand(currency.SatoshiTProviderLabel)
-		case currency.DollarProviderLabel:
-			msg.ParseMode = tb.ModeHTML
-			msg.Text = h.handleProviderCommand(currency.DollarProviderLabel)
+	if update.Message.IsCommand() {
+		switch update.Message.Command() {
+		case "cotizaciones":
+			msg.Text = "Selecciona una opción para ver las cotizaciones:"
+			msg.ReplyMarkup = optionsKeyboard
 		default:
 			msg.Text = "Intenta con /cotizaciones"
 		}
+	} else {
+		// handle keyboard button text
+		msg.ParseMode = tb.ModeHTML
+		msg.Text = h.handleProviderCommand(update.Message.Text)
 	}
 
 	_, err := h.tgAPI.Send(msg)
@@ -90,7 +84,7 @@ func (h *handler) handleProviderCommand(providerName string) string {
 		return errorMsg
 	}
 
-	message, err := h.templateEngine.ProcessPricesTemplate(lastPrices)
+	message, err := h.templateEngine.FormatPricesMessage(lastPrices)
 	if err != nil {
 		h.logger.Error("formatting prices template", zap.Error(err))
 		return errorMsg

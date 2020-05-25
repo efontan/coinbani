@@ -47,7 +47,7 @@ func main() {
 	dollarProvider := provider.NewDollarProvider(cfg.Providers, httpClient, providerCache)
 
 	currencyService := currency.NewService(bbProvider, satoshiTProvider, dollarProvider, logger)
-	templateEngine := template.NewEngine(cfg.Template)
+	templateEngine := template.NewEngine()
 	replyHandler := reply.NewHandler(bot, currencyService, templateEngine, logger)
 
 	logger.Info("coinbani bot successfully started!")
