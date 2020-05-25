@@ -98,6 +98,8 @@ func (e *satoshiTProvider) fetchPricesForCurrency(currency string, fetchURL stri
 	lastPrices = addCryptocurrencySTPrice(lastPrices, satoshiTResponse.Data.Ticker.DAI, "DAI", currency)
 	// BTC
 	lastPrices = addCryptocurrencySTPrice(lastPrices, satoshiTResponse.Data.Ticker.BTC, "BTC", currency)
+	// ETH
+	lastPrices = addCryptocurrencySTPrice(lastPrices, satoshiTResponse.Data.Ticker.ETH, "ETH", currency)
 
 	return lastPrices, nil
 }
@@ -106,11 +108,10 @@ func addCryptocurrencySTPrice(lastPrices []*currency.CurrencyPrice, price *Satos
 	desc := strings.ToUpper(bidCurrency) + "/" + strings.ToUpper(askCurrency)
 
 	lastPrices = append(lastPrices, &currency.CurrencyPrice{
-		Desc:          desc,
-		Currency:      askCurrency,
-		BidPrice:      price.BidPrice,
-		AskPrice:      price.AskPrice,
-		PercentChange: "-",
+		Desc:     desc,
+		Currency: askCurrency,
+		BidPrice: price.BidPrice,
+		AskPrice: price.AskPrice,
 	})
 
 	return lastPrices

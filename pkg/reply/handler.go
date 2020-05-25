@@ -19,24 +19,30 @@ var optionsKeyboard = tb.NewReplyKeyboard(
 		tb.NewKeyboardButton(currency.SatoshiTProviderLabel),
 	),
 	tb.NewKeyboardButtonRow(
-		tb.NewKeyboardButton(currency.DolarProviderLabel),
+		tb.NewKeyboardButton(currency.DollarProviderLabel),
 	),
 )
 
 type currencyService interface {
-	GetLastPrices(providerName string) ([]*currency.CurrencyPriceList, error)
+	GetLastPrices(providerName string) (*currency.CurrencyPriceList, error)
+}
+
+type templateEngine interface {
+	ProcessPricesTemplate(priceList *currency.CurrencyPriceList) (string, error)
 }
 
 type handler struct {
 	tgAPI           *tb.BotAPI
 	currencyService currencyService
+	templateEngine  templateEngine
 	logger          *zap.Logger
 }
 
-func NewHandler(b *tb.BotAPI, cs currencyService, l *zap.Logger) *handler {
+func NewHandler(b *tb.BotAPI, cs currencyService, t templateEngine, l *zap.Logger) *handler {
 	return &handler{
 		tgAPI:           b,
 		currencyService: cs,
+		templateEngine:  t,
 		logger:          l,
 	}
 }
@@ -62,50 +68,33 @@ func (h *handler) HandleReply(update tb.Update) {
 		case currency.SatoshiTProviderLabel:
 			msg.ParseMode = tb.ModeHTML
 			msg.Text = h.handleProviderCommand(currency.SatoshiTProviderLabel)
-		case currency.DolarProviderLabel:
+		case currency.DollarProviderLabel:
 			msg.ParseMode = tb.ModeHTML
-			msg.Text = h.handleProviderCommand(currency.DolarProviderLabel)
+			msg.Text = h.handleProviderCommand(currency.DollarProviderLabel)
 		default:
 			msg.Text = "Intenta con /cotizaciones"
 		}
 	}
 
-	h.tgAPI.Send(msg)
+	_, err := h.tgAPI.Send(msg)
+	if err != nil {
+		h.logger.Error(fmt.Sprintf("failed to send message for command [%s] to chatID [%d]", update.Message.Text, update.Message.Chat.ID), zap.Error(err))
+	}
 }
 
 func (h *handler) handleProviderCommand(providerName string) string {
+	h.logger.Info(fmt.Sprintf("handle provider command: %s", providerName))
 	lastPrices, err := h.currencyService.GetLastPrices(providerName)
 	if err != nil {
 		h.logger.Error("getting prices", zap.Error(err))
 		return errorMsg
 	}
 
-	message, err := h.formatPricesMessage(lastPrices)
+	message, err := h.templateEngine.ProcessPricesTemplate(lastPrices)
 	if err != nil {
-		h.logger.Error("formatting prices message", zap.Error(err))
+		h.logger.Error("formatting prices template", zap.Error(err))
 		return errorMsg
 	}
 
 	return message
-}
-
-func (h *handler) formatPricesMessage(lastPrices []*currency.CurrencyPriceList) (string, error) {
-	message := ""
-
-	for _, p := range lastPrices {
-		message = message + fmt.Sprint("-------------------------------------\n")
-		message = message + fmt.Sprintf("<strong>%s\n</strong>", p.ProviderName)
-		message = message + fmt.Sprint("-------------------------------------\n")
-
-		for _, price := range p.Prices {
-			message = message + fmt.Sprintf("%s\n", price.Desc)
-			message = message + fmt.Sprintf("  Compra: %.2f\n", price.BidPrice)
-			message = message + fmt.Sprintf("  Venta: %.2f\n\n", price.AskPrice)
-			if price.PercentChange != "" {
-				message = message + fmt.Sprintf("  Variación: %s\n\n", price.PercentChange)
-			}
-		}
-	}
-
-	return message, nil
 }

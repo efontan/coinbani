@@ -1,6 +1,7 @@
 package main
 
 import (
+	"coinbani/pkg/template"
 	"fmt"
 	"log"
 	"net/http"
@@ -43,10 +44,11 @@ func main() {
 	httpClient := &http.Client{Timeout: 10 * time.Second}
 	bbProvider := provider.NewBBProvider(cfg.Providers, httpClient, providerCache)
 	satoshiTProvider := provider.NewSatoshiTProvider(cfg.Providers, httpClient, providerCache)
-	dolarProvider := provider.NewDolarProvider(cfg.Providers, httpClient, providerCache)
+	dollarProvider := provider.NewDollarProvider(cfg.Providers, httpClient, providerCache)
 
-	currencyService := currency.NewService(bbProvider, satoshiTProvider, dolarProvider, logger)
-	replyHandler := reply.NewHandler(bot, currencyService, logger)
+	currencyService := currency.NewService(bbProvider, satoshiTProvider, dollarProvider, logger)
+	templateEngine := template.NewEngine(cfg.Template)
+	replyHandler := reply.NewHandler(bot, currencyService, templateEngine, logger)
 
 	logger.Info("coinbani bot successfully started!")
 	for {

@@ -1,7 +1,7 @@
 package currency
 
 const (
-	BBProviderLabel       = "BuenBit"
+	BBProviderLabel       = "Buen Bit"
 	SatoshiTProviderLabel = "Satoshi Tango"
-	DolarProviderLabel    = "Dolar"
+	DollarProviderLabel    = "Dolar"
 )

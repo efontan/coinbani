@@ -16,66 +16,83 @@ import (
 )
 
 const (
-	DolarResponseExpiration = 60 * time.Minute
-	DolarResponseCacheKey   = "dolar_response"
+	DollarResponseExpiration = 60 * time.Minute
+	DollarResponseCacheKey   = "dollar_response"
 )
 
-type DolarRateResponse []struct {
-	Price DolarPrice `json:"casa"`
+var namesMap = map[string]string{
+	"Bolsa":             "MEP",
+	"Contado con Liqui": "CCL",
 }
 
-type DolarPrice struct {
+type DollarRateResponse []struct {
+	Price DollarPrice `json:"casa"`
+}
+
+type DollarPrice struct {
 	BidPrice      string `json:"compra"`
 	AskPrice      string `json:"venta"`
 	Name          string `json:"nombre"`
 	PercentChange string `json:"variacion"`
 }
 
-type dolarProvider struct {
+type dollarProvider struct {
 	config     *options.ProvidersConfig
 	httpClient client.Http
 	cache      cache.Cache
 }
 
-func NewDolarProvider(c *options.ProvidersConfig, httpClient client.Http, cache cache.Cache) *dolarProvider {
-	return &dolarProvider{config: c, httpClient: httpClient, cache: cache}
+func NewDollarProvider(c *options.ProvidersConfig, httpClient client.Http, cache cache.Cache) *dollarProvider {
+	return &dollarProvider{config: c, httpClient: httpClient, cache: cache}
 }
 
-func (e *dolarProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
+func (e *dollarProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 	var lastPrices []*currency.CurrencyPrice
 
-	var dolarResponse DolarRateResponse
-	cachedResponse, found := e.cache.Get(DolarResponseCacheKey)
+	var dollarResponse DollarRateResponse
+	cachedResponse, found := e.cache.Get(DollarResponseCacheKey)
 
 	if !found {
 		// fetch from service
-		r, err := e.httpClient.Get(e.config.DolarURL)
+		r, err := e.httpClient.Get(e.config.DollarURL)
 		if err != nil {
-			return nil, errors.Wrap(err, "fetching prices from dolar service")
+			return nil, errors.Wrap(err, "fetching prices from dollar service")
 		}
 		defer r.Body.Close()
 
 		if r.StatusCode != http.StatusOK {
-			return nil, errors.Wrap(err, "fetching prices from dolar service")
+			return nil, errors.Wrap(err, "fetching prices from dollar service")
 		}
 
-		err = json.NewDecoder(r.Body).Decode(&dolarResponse)
-		if err != nil || len(dolarResponse) < 2 {
-			return nil, errors.Wrap(err, "decoding dolar response json")
+		err = json.NewDecoder(r.Body).Decode(&dollarResponse)
+		if err != nil || len(dollarResponse) < 2 {
+			return nil, errors.Wrap(err, "decoding dollar response json")
 		}
-		e.cache.Set(DolarResponseCacheKey, dolarResponse, DolarResponseExpiration)
+		e.cache.Set(DollarResponseCacheKey, dollarResponse, DollarResponseExpiration)
 	} else {
 		// fetch from cache
-		dolarResponse = cachedResponse.(DolarRateResponse)
+		dollarResponse = cachedResponse.(DollarRateResponse)
 	}
 
-	lastPrices = addDolarPrices(lastPrices, dolarResponse[0].Price)
-	lastPrices = addDolarPrices(lastPrices, dolarResponse[1].Price)
+	prices := filterPRices(dollarResponse)
+	for _, p := range prices {
+		lastPrices = addDollarPrices(lastPrices, p)
+	}
 
 	return lastPrices, nil
 }
 
-func addDolarPrices(lastPrices []*currency.CurrencyPrice, price DolarPrice) []*currency.CurrencyPrice {
+func filterPRices(response DollarRateResponse) []DollarPrice {
+	prices := make([]DollarPrice, 0)
+	for _, p := range response {
+		if p.Price.Name == "Dolar Oficial" || p.Price.Name == "Dolar Blue" || p.Price.Name == "Dolar Bolsa" || p.Price.Name == "Dolar Contado con Liqui" {
+			prices = append(prices, p.Price)
+		}
+	}
+	return prices
+}
+
+func addDollarPrices(lastPrices []*currency.CurrencyPrice, price DollarPrice) []*currency.CurrencyPrice {
 	bidStr := replaceComa(price.BidPrice)
 	bidPrice, err := strconv.ParseFloat(bidStr, 32)
 	if err != nil {
@@ -89,7 +106,7 @@ func addDolarPrices(lastPrices []*currency.CurrencyPrice, price DolarPrice) []*c
 	}
 
 	lastPrices = append(lastPrices, &currency.CurrencyPrice{
-		Desc:          price.Name,
+		Desc:          formatDollarName(price.Name),
 		Currency:      "USD",
 		BidPrice:      bidPrice,
 		AskPrice:      askPrice,
@@ -97,6 +114,17 @@ func addDolarPrices(lastPrices []*currency.CurrencyPrice, price DolarPrice) []*c
 	})
 
 	return lastPrices
+}
+
+func formatDollarName(v string) string {
+	name := strings.Replace(v, "Dolar ", "", -1)
+
+	v, ok := namesMap[name]
+	if !ok {
+		return name
+	}
+
+	return v
 }
 
 func replaceComa(value string) string {

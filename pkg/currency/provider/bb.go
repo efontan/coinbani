@@ -95,7 +95,6 @@ func addCryptocurrencyBBPrice(lastPrices []*currency.CurrencyPrice, price *BBPri
 		Currency:      strings.Replace(price.Currency, "$", "S", -1),
 		BidPrice:      price.BidPrice,
 		AskPrice:      price.AskPrice,
-		PercentChange: price.PriceChangePercent,
 	})
 
 	return lastPrices

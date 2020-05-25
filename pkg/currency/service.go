@@ -10,64 +10,55 @@ type currencyProvider interface {
 }
 
 type service struct {
-	bbProvider    currencyProvider
-	stProvider    currencyProvider
-	dolarProvider currencyProvider
-	logger        *zap.Logger
+	bbProvider     currencyProvider
+	stProvider     currencyProvider
+	dollarProvider currencyProvider
+	logger         *zap.Logger
 }
 
-func NewService(bb currencyProvider, st currencyProvider, dolar currencyProvider, l *zap.Logger) *service {
-	return &service{bbProvider: bb, stProvider: st, dolarProvider: dolar, logger: l}
+func NewService(bb currencyProvider, st currencyProvider, dollar currencyProvider, l *zap.Logger) *service {
+	return &service{bbProvider: bb, stProvider: st, dollarProvider: dollar, logger: l}
 }
 
-func (s *service) GetLastPrices(providerName string) ([]*CurrencyPriceList, error) {
+func (s *service) GetLastPrices(providerName string) (*CurrencyPriceList, error) {
 	switch providerName {
 	case BBProviderLabel:
 		return s.getBBPrices()
 	case SatoshiTProviderLabel:
 		return s.getSatoshiTPrices()
-	case DolarProviderLabel:
-		return s.getDolarPrices()
+	case DollarProviderLabel:
+		return s.getDollarPrices()
 	default:
 		return nil, errors.New("unknown provider")
 	}
 }
 
-func (s *service) getBBPrices() ([]*CurrencyPriceList, error) {
-	var lastPrices []*CurrencyPriceList
-
+func (s *service) getBBPrices() (*CurrencyPriceList, error) {
 	// Fetch BB prices
 	bbLastPrices, err := s.bbProvider.FetchLastPrices()
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching BB prices")
 	}
-	lastPrices = append(lastPrices, &CurrencyPriceList{ProviderName: BBProviderLabel, Prices: bbLastPrices})
 
-	return lastPrices, nil
+	return &CurrencyPriceList{ProviderName: BBProviderLabel, Prices: bbLastPrices}, nil
 }
 
-func (s *service) getSatoshiTPrices() ([]*CurrencyPriceList, error) {
-	var lastPrices []*CurrencyPriceList
-
+func (s *service) getSatoshiTPrices() (*CurrencyPriceList, error) {
 	// Fetch SatoshiT prices
 	stLastPrices, err := s.stProvider.FetchLastPrices()
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching SatoshiT prices")
 	}
-	lastPrices = append(lastPrices, &CurrencyPriceList{ProviderName: SatoshiTProviderLabel, Prices: stLastPrices})
 
-	return lastPrices, nil
+	return &CurrencyPriceList{ProviderName: SatoshiTProviderLabel, Prices: stLastPrices}, nil
 }
 
-func (s *service) getDolarPrices() ([]*CurrencyPriceList, error) {
-	var lastPrices []*CurrencyPriceList
-
-	// Fetch Dolar prices
-	dolarLastPrices, err := s.dolarProvider.FetchLastPrices()
+func (s *service) getDollarPrices() (*CurrencyPriceList, error) {
+	// Fetch Dollar prices
+	dollarLastPrices, err := s.dollarProvider.FetchLastPrices()
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching Dolar prices")
+		return nil, errors.Wrap(err, "fetching Dollar prices")
 	}
-	lastPrices = append(lastPrices, &CurrencyPriceList{ProviderName: DolarProviderLabel, Prices: dolarLastPrices})
 
-	return lastPrices, nil
+	return &CurrencyPriceList{ProviderName: DollarProviderLabel, Prices: dollarLastPrices}, nil
 }
