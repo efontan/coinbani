@@ -1,1 +1,1 @@
-web: coinbani
+web: go run cmd/main.go

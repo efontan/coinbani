@@ -7,8 +7,9 @@ import (
 )
 
 type config struct {
-	Bot       *BotConfig
-	Providers *ProvidersConfig
+	Application *ApplicationConfig
+	Bot         *BotConfig
+	Providers   *ProvidersConfig
 }
 
 func NewConfig() *config {
@@ -18,6 +19,10 @@ func NewConfig() *config {
 	}
 
 	return &config{
+		Application: &ApplicationConfig{
+			CallbackURL: os.Getenv("CALLBACK_URL"),
+			Port:        os.Getenv("SERVER_PORT"),
+		},
 		Bot: &BotConfig{
 			Token: os.Getenv("BOT_TOKEN"),
 			Debug: debug,
@@ -29,6 +34,11 @@ func NewConfig() *config {
 			DollarURL:     os.Getenv("DOLLAR_URL"),
 		},
 	}
+}
+
+type ApplicationConfig struct {
+	CallbackURL string
+	Port        string
 }
 
 type BotConfig struct {
