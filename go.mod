@@ -1,6 +1,6 @@
 module coinbani
 
-go 1.13
+go 1.12
 
 require (
 	github.com/alexeyco/simpletable v0.0.0-20200203113705-55bd62a5b8df
