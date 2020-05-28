@@ -1,1 +1,1 @@
-web: bin/coinbani
+web: app
