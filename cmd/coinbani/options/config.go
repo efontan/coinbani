@@ -21,7 +21,7 @@ func NewConfig() *config {
 	return &config{
 		Application: &ApplicationConfig{
 			CallbackURL: os.Getenv("CALLBACK_URL"),
-			Port:        os.Getenv("SERVER_PORT"),
+			Port:        os.Getenv("PORT"),
 		},
 		Bot: &BotConfig{
 			Token: os.Getenv("BOT_TOKEN"),
