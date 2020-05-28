@@ -10,5 +10,4 @@ RUN apk --no-cache add ca-certificates mailcap && addgroup -S app && adduser -S 
 USER app
 WORKDIR /app
 COPY --from=builder /app/app .
-EXPOSE 8443
 ENTRYPOINT ["./app"]
