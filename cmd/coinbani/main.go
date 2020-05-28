@@ -32,7 +32,8 @@ func main() {
 	bot.Debug = cfg.Bot.Debug
 	logger.Info(fmt.Sprintf("authorized on account %s", bot.Self.UserName))
 
-	_, err = bot.SetWebhook(tb.NewWebhook(cfg.Application.CallbackURL))
+	logger.Info("setting up webhook", zap.String("CallbackURL", cfg.Application.CallbackURL))
+	_, err = bot.SetWebhook(tb.NewWebhook(cfg.Application.CallbackURL + bot.Token))
 	if err != nil {
 		log.Fatal(err)
 	}
