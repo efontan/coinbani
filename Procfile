@@ -1,1 +1,1 @@
-web: coinbani
+web: app

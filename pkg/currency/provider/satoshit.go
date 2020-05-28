@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"coinbani/cmd/options"
+	"coinbani/cmd/coinbani/options"
 	"coinbani/pkg/cache"
 	"coinbani/pkg/client"
 	"coinbani/pkg/currency"
