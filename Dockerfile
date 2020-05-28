@@ -2,7 +2,6 @@ FROM golang:1.13 as builder
 
 COPY . /app
 WORKDIR /app
-RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux GOPROXY=https://proxy.golang.org go build -o app cmd/coinbani/main.go
 
 FROM alpine:latest
