@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"coinbani/cmd/options"
+	"coinbani/cmd/coinbani/options"
 	"coinbani/pkg/cache"
 	"coinbani/pkg/currency"
 	"coinbani/pkg/currency/provider"
