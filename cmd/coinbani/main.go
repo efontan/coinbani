@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"coinbani/cmd/options"
+	"coinbani/cmd/coinbani/options"
 	"coinbani/pkg/cache"
 	"coinbani/pkg/currency"
 	"coinbani/pkg/currency/provider"
@@ -28,18 +28,27 @@ func main() {
 		log.Panic(err)
 	}
 
+	// Setup telegram bot
 	bot.Debug = cfg.Bot.Debug
 	logger.Info(fmt.Sprintf("authorized on account %s", bot.Self.UserName))
 
-	u := tb.NewUpdate(0)
-	u.Timeout = 60
-
-	logger.Info("starting channel for getting bot updates")
-	updates, err := bot.GetUpdatesChan(u)
+	logger.Info("setting up webhook", zap.String("CallbackURL", cfg.Application.CallbackURL))
+	_, err = bot.SetWebhook(tb.NewWebhook(cfg.Application.CallbackURL + bot.Token))
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
+	}
+	info, err := bot.GetWebhookInfo()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if info.LastErrorDate != 0 {
+		logger.Error(fmt.Sprintf("Telegram callback failed: %s", info.LastErrorMessage))
 	}
 
+	updates := bot.ListenForWebhook("/" + bot.Token)
+	go http.ListenAndServe(":"+cfg.Application.Port, nil)
+
+	// setup services
 	providerCache := cache.New()
 	httpClient := &http.Client{Timeout: 10 * time.Second}
 	bbProvider := provider.NewBBProvider(cfg.Providers, httpClient, providerCache)
@@ -51,6 +60,7 @@ func main() {
 	replyHandler := reply.NewHandler(bot, currencyService, templateEngine, logger)
 
 	logger.Info("coinbani bot successfully started!")
+
 	for {
 		select {
 		case update, ok := <-updates:

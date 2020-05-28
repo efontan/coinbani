@@ -41,7 +41,7 @@ func (t *simpleTableFormatter) FormatPricesTable(prices []*currency.CurrencyPric
 
 	table.Header = &simpletable.Header{
 		Cells: []*simpletable.Cell{
-			{Align: simpletable.AlignLeft, Text: "Moneda"},
+			{Align: simpletable.AlignLeft, Text: "#"},
 			{Align: simpletable.AlignLeft, Text: "Compra"},
 			{Align: simpletable.AlignLeft, Text: "Venta"},
 		},
