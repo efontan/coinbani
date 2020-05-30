@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"coinbani/cmd/coinbani/options"
-	"coinbani/pkg/cache"
+	"coinbani/pkg/client"
 	"coinbani/pkg/currency"
 	"coinbani/pkg/currency/provider"
 	"coinbani/pkg/reply"
@@ -49,11 +48,10 @@ func main() {
 	go http.ListenAndServe(":"+cfg.Application.Port, nil)
 
 	// setup services
-	providerCache := cache.New()
-	httpClient := &http.Client{Timeout: 10 * time.Second}
-	bbProvider := provider.NewBBProvider(cfg.Providers, httpClient, providerCache)
-	satoshiTProvider := provider.NewSatoshiTProvider(cfg.Providers, httpClient, providerCache)
-	dollarProvider := provider.NewDollarProvider(cfg.Providers, httpClient, providerCache)
+	restClient := client.NewRestClientWithCache()
+	bbProvider := provider.NewBBProvider(cfg.Providers, restClient)
+	satoshiTProvider := provider.NewSatoshiTProvider(cfg.Providers, restClient)
+	dollarProvider := provider.NewDollarProvider(cfg.Providers, restClient)
 
 	currencyService := currency.NewService(bbProvider, satoshiTProvider, dollarProvider, logger)
 	templateEngine := template.NewEngine()

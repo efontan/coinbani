@@ -2,13 +2,13 @@ package provider
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"coinbani/cmd/coinbani/options"
-	"coinbani/pkg/cache"
 	"coinbani/pkg/client"
 	"coinbani/pkg/currency"
 
@@ -30,6 +30,16 @@ var namesMap = map[string]string{
 	"Contado con Liqui": "CCL",
 }
 
+var parseDollarResponseFunc = func(r *http.Response) (interface{}, error) {
+	var dollarResponse dollarRateResponse
+	err := json.NewDecoder(r.Body).Decode(dollarResponse)
+	if err != nil || len(dollarResponse) < 2 {
+		return nil, errors.Wrap(err, "decoding dollar response json")
+	}
+
+	return dollarResponse, nil
+}
+
 type dollarRateResponse []struct {
 	Price dollarPrice `json:"casa"`
 }
@@ -43,49 +53,35 @@ type dollarPrice struct {
 
 type dollarProvider struct {
 	config     *options.ProvidersConfig
-	httpClient client.Http
-	cache      cache.Cache
+	restClient client.Http
 }
 
-func NewDollarProvider(c *options.ProvidersConfig, httpClient client.Http, cache cache.Cache) *dollarProvider {
-	return &dollarProvider{config: c, httpClient: httpClient, cache: cache}
+func NewDollarProvider(c *options.ProvidersConfig, r client.Http) *dollarProvider {
+	return &dollarProvider{config: c, restClient: r}
 }
 
 func (d *dollarProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
-	var err error
-	var lastPrices []*currency.CurrencyPrice
-
-	var dollarResponse dollarRateResponse
-	cachedResponse, found := d.cache.Get(dollarResponseCacheKey)
-
-	if !found {
-		// fetch from service
-		r, err := d.httpClient.Get(d.config.DollarURL)
-		if err != nil {
-			return nil, errors.Wrap(err, "fetching prices from dollar service")
-		}
-		defer r.Body.Close()
-
-		if r.StatusCode != http.StatusOK {
-			return nil, errors.Wrap(err, "fetching prices from dollar service")
-		}
-
-		err = json.NewDecoder(r.Body).Decode(&dollarResponse)
-		if err != nil || len(dollarResponse) < 2 {
-			return nil, errors.Wrap(err, "decoding dollar response json")
-		}
-		d.cache.Set(dollarResponseCacheKey, dollarResponse, dollarResponseExpiration)
-	} else {
-		// fetch from cache
-		dollarResponse = cachedResponse.(dollarRateResponse)
+	req := &client.GetRequestBuilder{
+		Url:             d.config.DollarURL,
+		CacheKey:        dollarResponseCacheKey,
+		CacheExpiration: dollarResponseExpiration,
+		ParseResponse:   parseDollarResponseFunc,
 	}
 
-	prices := d.filterPrices(dollarResponse)
+	res, err := d.restClient.Get(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching prices from dollar service")
+	}
+
+	dollarResponse := res.(dollarRateResponse)
+
+	prices := filterPrices(dollarResponse)
 	prices, err = d.addDollarSaving(prices)
 	if err != nil {
 		return nil, errors.Wrap(err, "addding dollar saving")
 	}
 
+	var lastPrices []*currency.CurrencyPrice
 	for _, p := range prices {
 		lastPrices = addDollarPrices(lastPrices, p)
 	}
@@ -93,7 +89,7 @@ func (d *dollarProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 	return lastPrices, nil
 }
 
-func (d *dollarProvider) filterPrices(response dollarRateResponse) []dollarPrice {
+func filterPrices(response dollarRateResponse) []dollarPrice {
 	prices := make([]dollarPrice, 0)
 	for _, p := range response {
 		if p.Price.Name == dollarOfficial || p.Price.Name == dollarBlue || p.Price.Name == dollarMEP || p.Price.Name == dollarCCL {
@@ -155,8 +151,8 @@ func addDollarPrices(lastPrices []*currency.CurrencyPrice, price dollarPrice) []
 	lastPrices = append(lastPrices, &currency.CurrencyPrice{
 		Desc:          formatDollarName(price.Name),
 		Currency:      "USD",
-		BidPrice:      bidPrice,
-		AskPrice:      askPrice,
+		BidPrice:      math.Round(bidPrice*100) / 100,
+		AskPrice:      math.Round(askPrice*100) / 100,
 		PercentChange: formatPercent(price.PercentChange),
 	})
 

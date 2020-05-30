@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"coinbani/cmd/coinbani/options"
-	"coinbani/pkg/cache"
 	"coinbani/pkg/client"
 	"coinbani/pkg/currency"
 
@@ -18,6 +17,16 @@ const (
 	BBResponseExpiration = 10 * time.Minute
 	BBResponseCacheKey   = "bb_response"
 )
+
+var parseBBResponseFunc = func(r *http.Response) (interface{}, error) {
+	var bbResponse *BBResponse
+	err := json.NewDecoder(r.Body).Decode(&bbResponse)
+	if err != nil || bbResponse.Object == nil {
+		return nil, errors.Wrap(err, "decoding BB response json")
+	}
+
+	return bbResponse, nil
+}
 
 type BBResponse struct {
 	Object *BBObject `json:"object"`
@@ -40,42 +49,30 @@ type BBPrice struct {
 }
 
 type bbProvider struct {
-	httpClient client.Http
+	restClient client.Http
 	config     *options.ProvidersConfig
-	cache      cache.Cache
 }
 
-func NewBBProvider(c *options.ProvidersConfig, httpClient client.Http, cache cache.Cache) *bbProvider {
-	return &bbProvider{config: c, httpClient: httpClient, cache: cache}
+func NewBBProvider(c *options.ProvidersConfig, r client.Http) *bbProvider {
+	return &bbProvider{config: c, restClient: r}
 }
 
 func (p *bbProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 	var lastPrices []*currency.CurrencyPrice
 
-	var bbResponse BBResponse
-	cachedResponse, found := p.cache.Get(BBResponseCacheKey)
-
-	if !found {
-		// fetch from service
-		r, err := p.httpClient.Get(p.config.BBURL)
-		if err != nil {
-			return nil, errors.Wrap(err, "fetching prices from BB service")
-		}
-		defer r.Body.Close()
-
-		if r.StatusCode != http.StatusOK {
-			return nil, errors.Wrap(err, "fetching prices from BB service")
-		}
-
-		err = json.NewDecoder(r.Body).Decode(&bbResponse)
-		if err != nil || bbResponse.Object == nil {
-			return nil, errors.Wrap(err, "decoding BB response json")
-		}
-		p.cache.Set(BBResponseCacheKey, bbResponse, BBResponseExpiration)
-	} else {
-		// fetch from cache
-		bbResponse = cachedResponse.(BBResponse)
+	req := &client.GetRequestBuilder{
+		Url:             p.config.BBURL,
+		CacheKey:        BBResponseCacheKey,
+		CacheExpiration: BBResponseExpiration,
+		ParseResponse:   parseBBResponseFunc,
 	}
+
+	res, err := p.restClient.Get(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching prices from BB service")
+	}
+
+	bbResponse := res.(*BBResponse)
 
 	// DAI ARS
 	lastPrices = addCryptocurrencyBBPrice(lastPrices, bbResponse.Object.DaiARS)
@@ -91,10 +88,10 @@ func addCryptocurrencyBBPrice(lastPrices []*currency.CurrencyPrice, price *BBPri
 	desc := strings.ToUpper(price.BidCurrency) + "/" + strings.ToUpper(price.AskCurrency)
 
 	lastPrices = append(lastPrices, &currency.CurrencyPrice{
-		Desc:          desc,
-		Currency:      strings.Replace(price.Currency, "$", "S", -1),
-		BidPrice:      price.BidPrice,
-		AskPrice:      price.AskPrice,
+		Desc:     desc,
+		Currency: strings.Replace(price.Currency, "$", "S", -1),
+		BidPrice: price.BidPrice,
+		AskPrice: price.AskPrice,
 	})
 
 	return lastPrices
