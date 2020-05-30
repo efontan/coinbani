@@ -116,11 +116,14 @@ func (d *dollarProvider) addDollarSaving(prices []dollarPrice) ([]dollarPrice, e
 		return nil, errors.New("official dollar not found in list")
 	}
 
-	bidPrice, err := strconv.ParseFloat(official.BidPrice, 64)
+	b := strings.Replace(official.BidPrice, ",", ".", 1)
+	bidPrice, err := strconv.ParseFloat(b, 64)
 	if err != nil {
 		return nil, errors.New("error parsing official dollar bid price")
 	}
-	askPrice, err := strconv.ParseFloat(official.AskPrice, 64)
+
+	a := strings.Replace(official.AskPrice, ",", ".", 1)
+	askPrice, err := strconv.ParseFloat(a, 64)
 	if err != nil {
 		return nil, errors.New("error parsing official dollar ask price")
 	}

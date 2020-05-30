@@ -1,7 +1,6 @@
 package main
 
 import (
-	"coinbani/pkg/template"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"coinbani/pkg/currency"
 	"coinbani/pkg/currency/provider"
 	"coinbani/pkg/reply"
+	"coinbani/pkg/template"
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.uber.org/zap"
