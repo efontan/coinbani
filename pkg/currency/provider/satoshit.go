@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	SatoshiResponseExpiration  = 20 * time.Minute
+	SatoshiResponseExpiration  = 10 * time.Minute
 	SatoshiARSResponseCacheKey = "satoshi_ars_response"
 	SatoshiUSDResponseCacheKey = "satoshi_usd_response"
 )
@@ -49,18 +49,18 @@ func NewSatoshiTProvider(c *options.ProvidersConfig, httpClient client.Http, cac
 	return &satoshiTProvider{config: c, httpClient: httpClient, cache: cache}
 }
 
-func (e *satoshiTProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
+func (p *satoshiTProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 	var lastPrices []*currency.CurrencyPrice
 	var err error
 
 	// USD
-	lastPrices, err = e.fetchPricesForCurrency("ARS", e.config.SatoshiARSURL, SatoshiARSResponseCacheKey, lastPrices)
+	lastPrices, err = p.fetchPricesForCurrency("ARS", p.config.SatoshiARSURL, SatoshiARSResponseCacheKey, lastPrices)
 	if err != nil {
 		return nil, err
 	}
 
 	// USD
-	lastPrices, err = e.fetchPricesForCurrency("USD", e.config.SatoshiUSDURL, SatoshiUSDResponseCacheKey, lastPrices)
+	lastPrices, err = p.fetchPricesForCurrency("USD", p.config.SatoshiUSDURL, SatoshiUSDResponseCacheKey, lastPrices)
 	if err != nil {
 		return nil, err
 	}
@@ -68,13 +68,13 @@ func (e *satoshiTProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) 
 	return lastPrices, nil
 }
 
-func (e *satoshiTProvider) fetchPricesForCurrency(currency string, fetchURL string, cacheKey string, lastPrices []*currency.CurrencyPrice) ([]*currency.CurrencyPrice, error) {
+func (p *satoshiTProvider) fetchPricesForCurrency(currency string, fetchURL string, cacheKey string, lastPrices []*currency.CurrencyPrice) ([]*currency.CurrencyPrice, error) {
 	var satoshiTResponse SatoshiResponse
-	cachedResponse, found := e.cache.Get(cacheKey)
+	cachedResponse, found := p.cache.Get(cacheKey)
 
 	if !found {
 		// fetch from service
-		r, err := e.httpClient.Get(fetchURL)
+		r, err := p.httpClient.Get(fetchURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "fetching prices from SatoshiT service")
 		}
@@ -88,7 +88,7 @@ func (e *satoshiTProvider) fetchPricesForCurrency(currency string, fetchURL stri
 		if err != nil || satoshiTResponse.Data == nil {
 			return nil, errors.Wrap(err, "decoding Satoshi response json")
 		}
-		e.cache.Set(cacheKey, satoshiTResponse, SatoshiResponseExpiration)
+		p.cache.Set(cacheKey, satoshiTResponse, SatoshiResponseExpiration)
 	} else {
 		// fetch from cache
 		satoshiTResponse = cachedResponse.(SatoshiResponse)

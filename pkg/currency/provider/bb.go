@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	BBResponseExpiration = 20 * time.Minute
+	BBResponseExpiration = 10 * time.Minute
 	BBResponseCacheKey   = "bb_response"
 )
 
@@ -49,15 +49,15 @@ func NewBBProvider(c *options.ProvidersConfig, httpClient client.Http, cache cac
 	return &bbProvider{config: c, httpClient: httpClient, cache: cache}
 }
 
-func (e *bbProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
+func (p *bbProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 	var lastPrices []*currency.CurrencyPrice
 
 	var bbResponse BBResponse
-	cachedResponse, found := e.cache.Get(BBResponseCacheKey)
+	cachedResponse, found := p.cache.Get(BBResponseCacheKey)
 
 	if !found {
 		// fetch from service
-		r, err := e.httpClient.Get(e.config.BBURL)
+		r, err := p.httpClient.Get(p.config.BBURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "fetching prices from BB service")
 		}
@@ -71,7 +71,7 @@ func (e *bbProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 		if err != nil || bbResponse.Object == nil {
 			return nil, errors.Wrap(err, "decoding BB response json")
 		}
-		e.cache.Set(BBResponseCacheKey, bbResponse, BBResponseExpiration)
+		p.cache.Set(BBResponseCacheKey, bbResponse, BBResponseExpiration)
 	} else {
 		// fetch from cache
 		bbResponse = cachedResponse.(BBResponse)

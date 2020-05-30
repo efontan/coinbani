@@ -18,6 +18,11 @@ func NewConfig() *config {
 		log.Panic(err)
 	}
 
+	savingTax, err := strconv.ParseFloat(os.Getenv("DOLLAR_SAVING_TAX"), 64)
+	if err != nil {
+		log.Panic(err)
+	}
+
 	return &config{
 		Application: &ApplicationConfig{
 			CallbackURL: os.Getenv("CALLBACK_URL"),
@@ -28,10 +33,11 @@ func NewConfig() *config {
 			Debug: debug,
 		},
 		Providers: &ProvidersConfig{
-			BBURL:         os.Getenv("BB_URL"),
-			SatoshiARSURL: os.Getenv("SATOSHI_ARS_URL"),
-			SatoshiUSDURL: os.Getenv("SATOSHI_USD_URL"),
-			DollarURL:     os.Getenv("DOLLAR_URL"),
+			BBURL:           os.Getenv("BB_URL"),
+			SatoshiARSURL:   os.Getenv("SATOSHI_ARS_URL"),
+			SatoshiUSDURL:   os.Getenv("SATOSHI_USD_URL"),
+			DollarURL:       os.Getenv("DOLLAR_URL"),
+			DollarSavingTax: savingTax,
 		},
 	}
 }
@@ -47,8 +53,9 @@ type BotConfig struct {
 }
 
 type ProvidersConfig struct {
-	BBURL         string
-	SatoshiARSURL string
-	SatoshiUSDURL string
-	DollarURL     string
+	BBURL           string
+	SatoshiARSURL   string
+	SatoshiUSDURL   string
+	DollarURL       string
+	DollarSavingTax float64
 }
