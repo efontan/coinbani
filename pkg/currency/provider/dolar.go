@@ -31,11 +31,12 @@ var namesMap = map[string]string{
 }
 
 var parseDollarResponseFunc = func(r *http.Response) (interface{}, error) {
-	var dollarResponse dollarRateResponse
-	err := json.NewDecoder(r.Body).Decode(dollarResponse)
-	if err != nil || len(dollarResponse) < 2 {
+	var dollarResponse *dollarRateResponse
+	err := json.NewDecoder(r.Body).Decode(&dollarResponse)
+	if err != nil || len(*dollarResponse) < 2 {
 		return nil, errors.Wrap(err, "decoding dollar response json")
 	}
+	defer r.Body.Close()
 
 	return dollarResponse, nil
 }
@@ -73,9 +74,9 @@ func (d *dollarProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 		return nil, errors.Wrap(err, "fetching prices from dollar service")
 	}
 
-	dollarResponse := res.(dollarRateResponse)
+	dollarResponse := res.(*dollarRateResponse)
 
-	prices := filterPrices(dollarResponse)
+	prices := filterPrices(*dollarResponse)
 	prices, err = d.addDollarSaving(prices)
 	if err != nil {
 		return nil, errors.Wrap(err, "addding dollar saving")

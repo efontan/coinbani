@@ -43,12 +43,13 @@ type GetRequestBuilder struct {
 
 func (c *restClient) Get(req *GetRequestBuilder) (interface{}, error) {
 	v, found := c.cache.Get(req.CacheKey)
-	cachedResponse, ok := v.(*http.Response)
-	if !ok {
-		return nil, errors.New("casting cached response")
-	}
 
 	if found {
+		cachedResponse, ok := v.(*http.Response)
+		if !ok {
+			return nil, errors.New("casting cached response")
+		}
+
 		// fetch from cache
 		return req.ParseResponse(cachedResponse)
 	}
@@ -61,10 +62,9 @@ func (c *restClient) Get(req *GetRequestBuilder) (interface{}, error) {
 	r.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36")
 
 	res, err := c.client.Do(r)
-	if err != nil {
+	if err != nil || res == nil {
 		return nil, errors.Wrap(err, "fetching response from service")
 	}
-	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		return nil, errors.New(fmt.Sprintf("response status code is %d", res.StatusCode))

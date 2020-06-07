@@ -2,6 +2,7 @@ package provider
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -24,6 +25,7 @@ var parseBBResponseFunc = func(r *http.Response) (interface{}, error) {
 	if err != nil || bbResponse.Object == nil {
 		return nil, errors.Wrap(err, "decoding BB response json")
 	}
+	defer r.Body.Close()
 
 	return bbResponse, nil
 }
@@ -80,8 +82,23 @@ func (p *bbProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 	lastPrices = addCryptocurrencyBBPrice(lastPrices, bbResponse.Object.DaiUSD)
 	// BTC ARS
 	lastPrices = addCryptocurrencyBBPrice(lastPrices, bbResponse.Object.BTCARS)
+	// ARS USD
+	lastPrices = addUSDBPrice(lastPrices, bbResponse)
 
 	return lastPrices, nil
+}
+
+func addUSDBPrice(lastPrices []*currency.CurrencyPrice, r *BBResponse) []*currency.CurrencyPrice {
+	dai := r.Object.DaiARS.AskPrice
+	usd := r.Object.DaiUSD.BidPrice
+
+	lastPrices = append(lastPrices, &currency.CurrencyPrice{
+		Desc:     "ARS/USD",
+		BidPrice: 0,
+		AskPrice: math.Round(dai/usd*100) / 100,
+	})
+
+	return lastPrices
 }
 
 func addCryptocurrencyBBPrice(lastPrices []*currency.CurrencyPrice, price *BBPrice) []*currency.CurrencyPrice {

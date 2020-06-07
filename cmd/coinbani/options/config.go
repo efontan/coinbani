@@ -1,6 +1,7 @@
 package options
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"strconv"
@@ -10,6 +11,7 @@ type config struct {
 	Application *ApplicationConfig
 	Bot         *BotConfig
 	Providers   *ProvidersConfig
+	Log         *LogConfig
 }
 
 func NewConfig() *config {
@@ -29,8 +31,9 @@ func NewConfig() *config {
 			Port:        os.Getenv("PORT"),
 		},
 		Bot: &BotConfig{
-			Token: os.Getenv("BOT_TOKEN"),
-			Debug: debug,
+			Token:     os.Getenv("BOT_TOKEN"),
+			TokenBeta: os.Getenv("BOT_TOKEN_BETA"),
+			Debug:     debug,
 		},
 		Providers: &ProvidersConfig{
 			BBURL:           os.Getenv("BB_URL"),
@@ -38,6 +41,9 @@ func NewConfig() *config {
 			SatoshiUSDURL:   os.Getenv("SATOSHI_USD_URL"),
 			DollarURL:       os.Getenv("DOLLAR_URL"),
 			DollarSavingTax: savingTax,
+		},
+		Log: &LogConfig{
+			Level: os.Getenv("LOG_LEVEL"),
 		},
 	}
 }
@@ -48,8 +54,9 @@ type ApplicationConfig struct {
 }
 
 type BotConfig struct {
-	Token string
-	Debug bool
+	Token     string
+	TokenBeta string
+	Debug     bool
 }
 
 type ProvidersConfig struct {
@@ -58,4 +65,13 @@ type ProvidersConfig struct {
 	SatoshiUSDURL   string
 	DollarURL       string
 	DollarSavingTax float64
+}
+
+type LogConfig struct {
+	Level string
+}
+
+func (c *config) String() string {
+	res, _ := json.Marshal(c)
+	return string(res)
 }

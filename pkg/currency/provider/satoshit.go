@@ -20,21 +20,22 @@ const (
 )
 
 var parseSatoshiTResponseFunc = func(r *http.Response) (interface{}, error) {
-	var satoshiTResponse *satoshiResponse
+	var satoshiTResponse satoshiResponse
 	err := json.NewDecoder(r.Body).Decode(&satoshiTResponse)
-	if err != nil || satoshiTResponse.Data == nil {
+	if err != nil {
 		return nil, errors.Wrap(err, "decoding Satoshi response json")
 	}
+	defer r.Body.Close()
 
 	return satoshiTResponse, nil
 }
 
 type satoshiResponse struct {
-	Data *satoshiData `json:"data"`
+	Data satoshiData `json:"data"`
 }
 
 type satoshiData struct {
-	Ticker *satoshiTicker `json:"ticker"`
+	Ticker satoshiTicker `json:"ticker"`
 }
 
 type satoshiTicker struct {
@@ -79,8 +80,8 @@ func (p *satoshiTProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) 
 func (p *satoshiTProvider) fetchPricesForCurrency(currency string, fetchURL string, cacheKey string, lastPrices []*currency.CurrencyPrice) ([]*currency.CurrencyPrice, error) {
 	req := &client.GetRequestBuilder{
 		Url:             fetchURL,
-		CacheKey:        dollarResponseCacheKey,
-		CacheExpiration: dollarResponseExpiration,
+		CacheKey:        cacheKey,
+		CacheExpiration: satoshiResponseExpiration,
 		ParseResponse:   parseSatoshiTResponseFunc,
 	}
 
@@ -89,7 +90,7 @@ func (p *satoshiTProvider) fetchPricesForCurrency(currency string, fetchURL stri
 		return nil, errors.Wrap(err, "fetching prices from SatoshiT service")
 	}
 
-	satoshiTResponse := res.(*satoshiResponse)
+	satoshiTResponse := res.(satoshiResponse)
 
 	// DAI
 	lastPrices = addCryptocurrencySTPrice(lastPrices, satoshiTResponse.Data.Ticker.DAI, "DAI", currency)
@@ -107,8 +108,8 @@ func addCryptocurrencySTPrice(lastPrices []*currency.CurrencyPrice, price *satos
 	lastPrices = append(lastPrices, &currency.CurrencyPrice{
 		Desc:     desc,
 		Currency: askCurrency,
-		BidPrice: price.BidPrice,
-		AskPrice: price.AskPrice,
+		BidPrice: price.BidPrice * 0.99,
+		AskPrice: price.AskPrice * 1.01,
 	})
 
 	return lastPrices
