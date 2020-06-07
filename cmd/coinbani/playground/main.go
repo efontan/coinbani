@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	golog "log"
-	"net/http"
 
 	"coinbani/cmd/coinbani/options"
 	"coinbani/pkg/client"
@@ -16,9 +15,10 @@ import (
 	"go.uber.org/zap"
 )
 
+// For local testing purposes
 func main() {
 	cfg := options.NewConfig()
-	bot, err := tb.NewBotAPI(cfg.Bot.Token)
+	bot, err := tb.NewBotAPI(cfg.Bot.TokenBeta)
 	if err != nil {
 		golog.Panic(err)
 	}
@@ -31,21 +31,13 @@ func main() {
 	bot.Debug = cfg.Bot.Debug
 	logger.Info(fmt.Sprintf("authorized on account %s", bot.Self.UserName))
 
-	logger.Info("setting up webhook", zap.String("CallbackURL", cfg.Application.CallbackURL))
-	_, err = bot.SetWebhook(tb.NewWebhook(cfg.Application.CallbackURL + bot.Token))
+	u := tb.NewUpdate(0)
+	u.Timeout = 60
+	logger.Info("starting channel for getting bot updates")
+	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
-		logger.Fatal("setting up webhook", zap.Error(err))
+		logger.Fatal("starting bot channel", zap.Error(err))
 	}
-	info, err := bot.GetWebhookInfo()
-	if err != nil {
-		logger.Fatal("getting webhook info", zap.Error(err))
-	}
-	if info.LastErrorDate != 0 {
-		logger.Error(fmt.Sprintf("Telegram callback failed: %s", info.LastErrorMessage))
-	}
-
-	updates := bot.ListenForWebhook("/" + bot.Token)
-	go http.ListenAndServe(":"+cfg.Application.Port, nil)
 
 	// setup services
 	restClient := client.NewRestClientWithCache()

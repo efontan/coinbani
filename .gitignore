@@ -1,6 +1,7 @@
 .cache
 .history
 .lib/
+/bin
 
 # Editor directories and files
 .vscode
@@ -14,6 +15,8 @@
 .project
 .settings
 __debug_bin
+.DS_Store
+Thumbs.db
 
 # Environments
 .env
