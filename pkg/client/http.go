@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"coinbani/pkg/cache"
-
 	"github.com/pkg/errors"
 )
 
@@ -16,10 +14,9 @@ type Http interface {
 
 type restClient struct {
 	client *http.Client
-	cache  cache.Cache
 }
 
-func NewRestClientWithCache() *restClient {
+func NewRestClient() *restClient {
 	c := &http.Client{
 		Transport: &http.Transport{
 			TLSHandshakeTimeout: 5 * time.Second,
@@ -30,30 +27,15 @@ func NewRestClientWithCache() *restClient {
 	}
 	return &restClient{
 		client: c,
-		cache:  cache.New(),
 	}
 }
 
 type GetRequestBuilder struct {
-	Url             string
-	CacheKey        string
-	CacheExpiration time.Duration
-	ParseResponse   func(response *http.Response) (interface{}, error)
+	Url           string
+	ParseResponse func(response *http.Response) (interface{}, error)
 }
 
 func (c *restClient) Get(req *GetRequestBuilder) (interface{}, error) {
-	v, found := c.cache.Get(req.CacheKey)
-
-	if found {
-		cachedResponse, ok := v.(*http.Response)
-		if !ok {
-			return nil, errors.New("casting cached response")
-		}
-
-		// fetch from cache
-		return req.ParseResponse(cachedResponse)
-	}
-
 	// fetch from service
 	r, err := http.NewRequest(http.MethodGet, req.Url, nil)
 	if err != nil {
@@ -70,6 +52,5 @@ func (c *restClient) Get(req *GetRequestBuilder) (interface{}, error) {
 		return nil, errors.New(fmt.Sprintf("response status code is %d", res.StatusCode))
 	}
 
-	c.cache.Set(req.CacheKey, res, req.CacheExpiration)
 	return req.ParseResponse(res)
 }

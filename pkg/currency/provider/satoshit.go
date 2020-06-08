@@ -4,19 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
-	"time"
 
 	"coinbani/cmd/coinbani/options"
 	"coinbani/pkg/client"
 	"coinbani/pkg/currency"
 
 	"github.com/pkg/errors"
-)
-
-const (
-	satoshiResponseExpiration  = 10 * time.Minute
-	satoshiARSResponseCacheKey = "satoshi_ars_response"
-	satoshiUSDResponseCacheKey = "satoshi_usd_response"
 )
 
 var parseSatoshiTResponseFunc = func(r *http.Response) (interface{}, error) {
@@ -63,13 +56,13 @@ func (p *satoshiTProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) 
 	var err error
 
 	// USD
-	lastPrices, err = p.fetchPricesForCurrency("ARS", p.config.SatoshiARSURL, satoshiARSResponseCacheKey, lastPrices)
+	lastPrices, err = p.fetchPricesForCurrency("ARS", p.config.SatoshiARSURL, lastPrices)
 	if err != nil {
 		return nil, err
 	}
 
 	// USD
-	lastPrices, err = p.fetchPricesForCurrency("USD", p.config.SatoshiUSDURL, satoshiUSDResponseCacheKey, lastPrices)
+	lastPrices, err = p.fetchPricesForCurrency("USD", p.config.SatoshiUSDURL, lastPrices)
 	if err != nil {
 		return nil, err
 	}
@@ -77,12 +70,10 @@ func (p *satoshiTProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) 
 	return lastPrices, nil
 }
 
-func (p *satoshiTProvider) fetchPricesForCurrency(currency string, fetchURL string, cacheKey string, lastPrices []*currency.CurrencyPrice) ([]*currency.CurrencyPrice, error) {
+func (p *satoshiTProvider) fetchPricesForCurrency(currency string, fetchURL string, lastPrices []*currency.CurrencyPrice) ([]*currency.CurrencyPrice, error) {
 	req := &client.GetRequestBuilder{
-		Url:             fetchURL,
-		CacheKey:        cacheKey,
-		CacheExpiration: satoshiResponseExpiration,
-		ParseResponse:   parseSatoshiTResponseFunc,
+		Url:           fetchURL,
+		ParseResponse: parseSatoshiTResponseFunc,
 	}
 
 	res, err := p.restClient.Get(req)

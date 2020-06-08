@@ -48,7 +48,7 @@ func main() {
 	go http.ListenAndServe(":"+cfg.Application.Port, nil)
 
 	// setup services
-	restClient := client.NewRestClientWithCache()
+	restClient := client.NewRestClient()
 	bbProvider := provider.NewBBProvider(cfg.Providers, restClient)
 	satoshiTProvider := provider.NewSatoshiTProvider(cfg.Providers, restClient)
 	dollarProvider := provider.NewDollarProvider(cfg.Providers, restClient)
