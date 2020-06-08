@@ -5,7 +5,6 @@ import (
 	"math"
 	"net/http"
 	"strings"
-	"time"
 
 	"coinbani/cmd/coinbani/options"
 	"coinbani/pkg/client"
@@ -14,18 +13,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	BBResponseExpiration = 10 * time.Minute
-	BBResponseCacheKey   = "bb_response"
-)
-
 var parseBBResponseFunc = func(r *http.Response) (interface{}, error) {
 	var bbResponse *BBResponse
 	err := json.NewDecoder(r.Body).Decode(&bbResponse)
 	if err != nil || bbResponse.Object == nil {
 		return nil, errors.Wrap(err, "decoding BB response json")
 	}
-	defer r.Body.Close()
 
 	return bbResponse, nil
 }
@@ -63,10 +56,8 @@ func (p *bbProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 	var lastPrices []*currency.CurrencyPrice
 
 	req := &client.GetRequestBuilder{
-		Url:             p.config.BBURL,
-		CacheKey:        BBResponseCacheKey,
-		CacheExpiration: BBResponseExpiration,
-		ParseResponse:   parseBBResponseFunc,
+		Url:           p.config.BBURL,
+		ParseResponse: parseBBResponseFunc,
 	}
 
 	res, err := p.restClient.Get(req)

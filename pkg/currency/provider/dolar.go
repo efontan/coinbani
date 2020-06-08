@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"coinbani/cmd/coinbani/options"
 	"coinbani/pkg/client"
@@ -16,13 +15,11 @@ import (
 )
 
 const (
-	dollarResponseExpiration = 30 * time.Minute
-	dollarResponseCacheKey   = "dollar_response"
-	dollarOfficial           = "Dolar Oficial"
-	dollarBlue               = "Dolar Blue"
-	dollarMEP                = "Dolar Bolsa"
-	dollarCCL                = "Dolar Contado con Liqui"
-	dollarSaving             = "Ahorro"
+	dollarOfficial = "Dolar Oficial"
+	dollarBlue     = "Dolar Blue"
+	dollarMEP      = "Dolar Bolsa"
+	dollarCCL      = "Dolar Contado con Liqui"
+	dollarSaving   = "Ahorro"
 )
 
 var namesMap = map[string]string{
@@ -63,10 +60,8 @@ func NewDollarProvider(c *options.ProvidersConfig, r client.Http) *dollarProvide
 
 func (d *dollarProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 	req := &client.GetRequestBuilder{
-		Url:             d.config.DollarURL,
-		CacheKey:        dollarResponseCacheKey,
-		CacheExpiration: dollarResponseExpiration,
-		ParseResponse:   parseDollarResponseFunc,
+		Url:           d.config.DollarURL,
+		ParseResponse: parseDollarResponseFunc,
 	}
 
 	res, err := d.restClient.Get(req)
