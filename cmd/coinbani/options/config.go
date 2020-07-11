@@ -7,14 +7,14 @@ import (
 	"strconv"
 )
 
-type config struct {
+type Config struct {
 	Application *ApplicationConfig
 	Bot         *BotConfig
 	Providers   *ProvidersConfig
 	Log         *LogConfig
 }
 
-func NewConfig() *config {
+func NewConfig() *Config {
 	debug, err := strconv.ParseBool(os.Getenv("BOT_DEBUG"))
 	if err != nil {
 		log.Panic(err)
@@ -25,15 +25,14 @@ func NewConfig() *config {
 		log.Panic(err)
 	}
 
-	return &config{
+	return &Config{
 		Application: &ApplicationConfig{
 			CallbackURL: os.Getenv("CALLBACK_URL"),
 			Port:        os.Getenv("PORT"),
 		},
 		Bot: &BotConfig{
-			Token:     os.Getenv("BOT_TOKEN"),
-			TokenBeta: os.Getenv("BOT_TOKEN_BETA"),
-			Debug:     debug,
+			Token: os.Getenv("BOT_TOKEN"),
+			Debug: debug,
 		},
 		Providers: &ProvidersConfig{
 			BBURL:           os.Getenv("BB_URL"),
@@ -54,9 +53,8 @@ type ApplicationConfig struct {
 }
 
 type BotConfig struct {
-	Token     string
-	TokenBeta string
-	Debug     bool
+	Token string
+	Debug bool
 }
 
 type ProvidersConfig struct {
@@ -71,7 +69,7 @@ type LogConfig struct {
 	Level string
 }
 
-func (c *config) String() string {
+func (c *Config) String() string {
 	res, _ := json.Marshal(c)
 	return string(res)
 }

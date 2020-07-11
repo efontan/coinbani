@@ -1,8 +1,8 @@
 package main
 
 import (
+	"coinbani/pkg/telegram"
 	"fmt"
-	golog "log"
 
 	"coinbani/cmd/coinbani/options"
 	"coinbani/pkg/client"
@@ -11,30 +11,22 @@ import (
 	"coinbani/pkg/reply"
 	"coinbani/pkg/template"
 
-	tb "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.uber.org/zap"
 )
 
 // For local testing purposes
 func main() {
 	cfg := options.NewConfig()
-	bot, err := tb.NewBotAPI(cfg.Bot.TokenBeta)
-	if err != nil {
-		golog.Panic(err)
-	}
-
 	logger, err := options.GetLogger(cfg.Log)
 	defer logger.Sync()
 	logger.Debug("initializing coinbani bot whit config", zap.String("cfg", fmt.Sprintf("%+v", cfg)))
 
-	// Setup telegram bot
-	bot.Debug = cfg.Bot.Debug
-	logger.Info(fmt.Sprintf("authorized on account %s", bot.Self.UserName))
-
-	u := tb.NewUpdate(0)
-	u.Timeout = 60
+	bot, err := telegram.NewBot(cfg, logger)
+	if err != nil {
+		logger.Fatal("initializing telegram bot", zap.Error(err))
+	}
 	logger.Info("starting channel for getting bot updates")
-	updates, err := bot.GetUpdatesChan(u)
+	updates, err := bot.GetUpdatesChan()
 	if err != nil {
 		logger.Fatal("starting bot channel", zap.Error(err))
 	}

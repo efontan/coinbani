@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"coinbani/pkg/currency"
+	"coinbani/pkg/telegram"
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.uber.org/zap"
@@ -32,15 +33,15 @@ type templateEngine interface {
 }
 
 type handler struct {
-	tgAPI           *tb.BotAPI
+	bot             telegram.Bot
 	currencyService currencyService
 	templateEngine  templateEngine
 	logger          *zap.Logger
 }
 
-func NewHandler(b *tb.BotAPI, cs currencyService, t templateEngine, l *zap.Logger) *handler {
+func NewHandler(b telegram.Bot, cs currencyService, t templateEngine, l *zap.Logger) *handler {
 	return &handler{
-		tgAPI:           b,
+		bot:             b,
 		currencyService: cs,
 		templateEngine:  t,
 		logger:          l,
@@ -70,7 +71,7 @@ func (h *handler) HandleReply(update tb.Update) {
 		msg.Text = h.handleProviderCommand(update.Message.Text)
 	}
 
-	_, err := h.tgAPI.Send(msg)
+	_, err := h.bot.Send(msg)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("failed to send message for command [%s] to chatID [%d]", update.Message.Text, update.Message.Chat.ID), zap.Error(err))
 	}
