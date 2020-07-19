@@ -53,7 +53,7 @@ func (h *handler) HandleReply(update tb.Update) {
 		return
 	}
 
-	h.logger.Info(fmt.Sprintf("handling message [%s] %s", update.Message.From.UserName, update.Message.Text))
+	h.logger.Debug(fmt.Sprintf("handling message [%s] %s", update.Message.From.UserName, update.Message.Text))
 
 	msg := tb.NewMessage(update.Message.Chat.ID, "")
 

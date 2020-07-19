@@ -16,33 +16,37 @@ type Bot interface {
 
 type tbbot struct {
 	bot    *tb.BotAPI
-	config *options.Config
+	config *options.BotConfig
 	logger *zap.Logger
 }
 
-func NewBot(c *options.Config, l *zap.Logger) (*tbbot, error) {
-	b, err := tb.NewBotAPI(c.Bot.Token)
+func NewBot(c *options.BotConfig, l *zap.Logger) (*tbbot, error) {
+	b, err := tb.NewBotAPI(c.Token)
 	if err != nil {
 		return nil, errors.Wrap(err, "initializing Telegram bot")
 	}
-	b.Debug = c.Bot.Debug
+	b.Debug = c.Debug
 	l.Info(fmt.Sprintf("authorized on account %s", b.Self.UserName))
 
 	return &tbbot{
 		bot:    b,
+		config: c,
 		logger: l,
 	}, nil
 }
 
 func (b *tbbot) GetUpdatesChan() (tb.UpdatesChannel, error) {
+	if b.config.IsWebhookEnabled {
+		return b.getUpdatesChanForWebhook()
+	}
 	u := tb.NewUpdate(0)
 	u.Timeout = 60
 	return b.bot.GetUpdatesChan(u)
 }
 
-func (b *tbbot) GetUpdatesChanForWebhook(pattern string) (tb.UpdatesChannel, error) {
-	b.logger.Info("setting up webhook", zap.String("CallbackURL", b.config.Application.CallbackURL))
-	_, err := b.bot.SetWebhook(tb.NewWebhook(b.config.Application.CallbackURL + b.bot.Token))
+func (b *tbbot) getUpdatesChanForWebhook() (tb.UpdatesChannel, error) {
+	b.logger.Info("setting up webhook", zap.String("CallbackURL", b.config.CallbackURL))
+	_, err := b.bot.SetWebhook(tb.NewWebhook(b.config.CallbackURL + b.bot.Token))
 	if err != nil {
 		return nil, errors.Wrap(err, "setting up bot webhook")
 	}
@@ -55,7 +59,7 @@ func (b *tbbot) GetUpdatesChanForWebhook(pattern string) (tb.UpdatesChannel, err
 	}
 
 	updates := b.bot.ListenForWebhook("/" + b.bot.Token)
-	go http.ListenAndServe(":"+b.config.Application.Port, nil)
+	go http.ListenAndServe(":"+b.config.Port, nil)
 
 	return updates, nil
 }

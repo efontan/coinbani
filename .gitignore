@@ -2,6 +2,7 @@
 .history
 .lib/
 /bin
+/vendor
 
 # Editor directories and files
 .vscode
