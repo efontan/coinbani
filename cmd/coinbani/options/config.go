@@ -2,76 +2,35 @@ package options
 
 import (
 	"encoding/json"
-	"log"
-	"os"
-	"strconv"
 )
 
-type config struct {
-	Application *ApplicationConfig
-	Bot         *BotConfig
-	Providers   *ProvidersConfig
-	Log         *LogConfig
-}
-
-func NewConfig() *config {
-	debug, err := strconv.ParseBool(os.Getenv("BOT_DEBUG"))
-	if err != nil {
-		log.Panic(err)
-	}
-
-	savingTax, err := strconv.ParseFloat(os.Getenv("DOLLAR_SAVING_TAX"), 64)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	return &config{
-		Application: &ApplicationConfig{
-			CallbackURL: os.Getenv("CALLBACK_URL"),
-			Port:        os.Getenv("PORT"),
-		},
-		Bot: &BotConfig{
-			Token:     os.Getenv("BOT_TOKEN"),
-			TokenBeta: os.Getenv("BOT_TOKEN_BETA"),
-			Debug:     debug,
-		},
-		Providers: &ProvidersConfig{
-			BBURL:           os.Getenv("BB_URL"),
-			SatoshiARSURL:   os.Getenv("SATOSHI_ARS_URL"),
-			SatoshiUSDURL:   os.Getenv("SATOSHI_USD_URL"),
-			DollarURL:       os.Getenv("DOLLAR_URL"),
-			DollarSavingTax: savingTax,
-		},
-		Log: &LogConfig{
-			Level: os.Getenv("LOG_LEVEL"),
-		},
-	}
-}
-
-type ApplicationConfig struct {
-	CallbackURL string
-	Port        string
+type Config struct {
+	Bot       *BotConfig
+	Log       *LogConfig
+	Providers *ProvidersConfig
 }
 
 type BotConfig struct {
-	Token     string
-	TokenBeta string
-	Debug     bool
+	CallbackURL      string `env:"CALLBACK_URL"`
+	Debug            bool   `env:"BOT_DEBUG,default=false"`
+	Port             string `env:"PORT"`
+	Token            string `env:"BOT_TOKEN,required"`
+	IsWebhookEnabled bool   `env:"BOT_IS_WEBHOOK_ENABLED,default=false"`
 }
 
 type ProvidersConfig struct {
-	BBURL           string
-	SatoshiARSURL   string
-	SatoshiUSDURL   string
-	DollarURL       string
-	DollarSavingTax float64
+	BBURL           string  `env:"BB_URL"`
+	DollarURL       string  `env:"DOLLAR_URL"`
+	DollarSavingTax float64 `env:"DOLLAR_SAVING_TAX"`
+	SatoshiARSURL   string  `env:"SATOSHI_ARS_URL"`
+	SatoshiUSDURL   string  `env:"SATOSHI_USD_URL"`
 }
 
 type LogConfig struct {
-	Level string
+	Level string `env:"LOG_LEVEL,default=info"`
 }
 
-func (c *config) String() string {
+func (c *Config) String() string {
 	res, _ := json.Marshal(c)
 	return string(res)
 }

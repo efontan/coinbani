@@ -80,13 +80,15 @@ func (p *bbProvider) FetchLastPrices() ([]*currency.CurrencyPrice, error) {
 }
 
 func addUSDBPrice(lastPrices []*currency.CurrencyPrice, r *BBResponse) []*currency.CurrencyPrice {
-	dai := r.Object.DaiARS.AskPrice
-	usd := r.Object.DaiUSD.BidPrice
+	daiAskPrice := r.Object.DaiARS.AskPrice
+	usdBidPrice := r.Object.DaiUSD.BidPrice
+	daiBidPrice := r.Object.DaiARS.BidPrice
+	usdAskPrice := r.Object.DaiUSD.AskPrice
 
 	lastPrices = append(lastPrices, &currency.CurrencyPrice{
 		Desc:     "ARS/USD",
-		BidPrice: 0,
-		AskPrice: math.Round(dai/usd*100) / 100,
+		BidPrice: math.Round(daiBidPrice/usdAskPrice*100) / 100,
+		AskPrice: math.Round(daiAskPrice/usdBidPrice*100) / 100,
 	})
 
 	return lastPrices

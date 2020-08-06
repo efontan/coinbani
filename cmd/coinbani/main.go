@@ -1,26 +1,26 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	golog "log"
-	"net/http"
+	"log"
 
 	"coinbani/cmd/coinbani/options"
 	"coinbani/pkg/client"
 	"coinbani/pkg/currency"
 	"coinbani/pkg/currency/provider"
 	"coinbani/pkg/reply"
+	"coinbani/pkg/telegram"
 	"coinbani/pkg/template"
 
-	tb "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/zap"
 )
 
 func main() {
-	cfg := options.NewConfig()
-	bot, err := tb.NewBotAPI(cfg.Bot.Token)
-	if err != nil {
-		golog.Panic(err)
+	var cfg options.Config
+	if err := envconfig.Process(context.Background(), &cfg); err != nil {
+		log.Fatal(err)
 	}
 
 	logger, err := options.GetLogger(cfg.Log)
@@ -28,24 +28,15 @@ func main() {
 	logger.Debug("initializing coinbani bot whit config", zap.String("cfg", fmt.Sprintf("%+v", cfg)))
 
 	// Setup telegram bot
-	bot.Debug = cfg.Bot.Debug
-	logger.Info(fmt.Sprintf("authorized on account %s", bot.Self.UserName))
-
-	logger.Info("setting up webhook", zap.String("CallbackURL", cfg.Application.CallbackURL))
-	_, err = bot.SetWebhook(tb.NewWebhook(cfg.Application.CallbackURL + bot.Token))
+	bot, err := telegram.NewBot(cfg.Bot, logger)
 	if err != nil {
-		logger.Fatal("setting up webhook", zap.Error(err))
+		logger.Fatal("initializing telegram bot", zap.Error(err))
 	}
-	info, err := bot.GetWebhookInfo()
+	logger.Info("starting channel for getting bot updates")
+	updates, err := bot.GetUpdatesChan()
 	if err != nil {
-		logger.Fatal("getting webhook info", zap.Error(err))
+		logger.Fatal("starting bot channel", zap.Error(err))
 	}
-	if info.LastErrorDate != 0 {
-		logger.Error(fmt.Sprintf("Telegram callback failed: %s", info.LastErrorMessage))
-	}
-
-	updates := bot.ListenForWebhook("/" + bot.Token)
-	go http.ListenAndServe(":"+cfg.Application.Port, nil)
 
 	// setup services
 	restClient := client.NewRestClient()
