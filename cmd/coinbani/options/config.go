@@ -34,11 +34,3 @@ func (c *Config) String() string {
 	res, _ := json.Marshal(c)
 	return string(res)
 }
-
-func NewConfig() *Config {
-	// savingTax, err := strconv.ParseFloat(os.Getenv("DOLLAR_SAVING_TAX"), 64)
-	// if err != nil {
-	// 	log.Panic(err)
-	// }
-	return &Config{}
-}
